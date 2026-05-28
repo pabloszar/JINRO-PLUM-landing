@@ -1,0 +1,1597 @@
+/* CSS Variables for Premium Design System */
+:root {
+  --color-pink-primary: #ff1a75;
+  --color-pink-neon: #ff007f;
+  --color-pink-glow: rgba(255, 0, 127, 0.4);
+  --color-white: #ffffff;
+  --color-white-trans: rgba(255, 255, 255, 0.8);
+  --color-white-dim: rgba(255, 255, 255, 0.5);
+  --color-white-dark: rgba(255, 255, 255, 0.25);
+  
+  --font-serif: 'Times New Roman', Times, serif;
+  --font-sans: 'Outfit', sans-serif;
+  
+  --transition-smooth: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  --transition-fast: all 0.2s ease;
+}
+
+/* Base resets */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #030206;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+/* Snap Scroll Container */
+.snap-scroll-container {
+  width: 100%;
+  height: 100vh;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  position: relative;
+  /* Hide standard scrollbars for a bespoken fullscreen slide look */
+  scrollbar-width: none; /* Firefox */
+}
+
+.snap-scroll-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Snapping Sections */
+.section-hero, .section-ritual, .section-section3, .section-section4 {
+  width: 100%;
+  height: 100vh;
+  scroll-snap-align: start;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.section-hero {
+  background-image: url('/Image Hero Jiro.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+.section-ritual {
+  background-image: url('/Frame 2.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+.section-section3 {
+  background-image: url('/Section3.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+.section-section4 {
+  background-image: url('/Section4.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+/* Camera Bloom & Color Burn Overlay */
+.scroll-bloom-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--color-pink-primary);
+  z-index: 999; /* Covers everything to completely burn the screen! */
+  pointer-events: none; /* Let clicks and scrolls pass through */
+  will-change: opacity, backdrop-filter;
+  mix-blend-mode: normal;
+  transition: opacity 0.05s ease-out, backdrop-filter 0.05s ease-out; /* Highly responsive to instant scroll */
+}
+
+/* Slower cinematic fade curve for play clicks and special triggers */
+.scroll-bloom-overlay.slow-transition {
+  transition: opacity 1.8s cubic-bezier(0.22, 1, 0.36, 1),
+              backdrop-filter 1.8s cubic-bezier(0.22, 1, 0.36, 1);
+  /* High-energy bright white-hot center camera flash radial gradient! */
+  background: radial-gradient(circle at center, #ffffff 0%, #fff2f7 35%, var(--color-pink-primary) 100%) !important;
+  box-shadow: inset 0 0 100px rgba(255, 255, 255, 0.45);
+}
+
+/* Full-Screen Page Load Cinematic Intro Bloom Overlay */
+.intro-bloom-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--color-pink-primary);
+  z-index: 9999; /* Topmost overlay during initial page paint */
+  pointer-events: none;
+  opacity: 1;
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  transition: opacity 1.5s cubic-bezier(0.25, 1, 0.5, 1),
+              backdrop-filter 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.intro-bloom-overlay.fade-out {
+  opacity: 0;
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+}
+
+/* Background gradient wrappers to ensure readability of UI elements */
+.bg-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* Vignette on both sides (left & right) to optimize readability on both sides, center remains bright */
+  background: linear-gradient(90deg, rgba(3, 2, 6, 0.75) 0%, rgba(3, 2, 6, 0.3) 25%, rgba(3, 2, 6, 0) 50%, rgba(3, 2, 6, 0.3) 75%, rgba(3, 2, 6, 0.75) 100%),
+              linear-gradient(180deg, rgba(3, 2, 6, 0.5) 0%, rgba(3, 2, 6, 0) 25%, rgba(3, 2, 6, 0.4) 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.bg-wrapper-ritual {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* Pure left vignette for the editorial Section 2 title and paragraphs */
+  background: linear-gradient(90deg, rgba(3, 2, 6, 0.75) 0%, rgba(3, 2, 6, 0.35) 35%, rgba(3, 2, 6, 0) 65%),
+              linear-gradient(180deg, rgba(3, 2, 6, 0.5) 0%, rgba(3, 2, 6, 0) 25%, rgba(3, 2, 6, 0.4) 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.bg-wrapper-section3 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* Vignette customized for Section 3 vertical features lists on both left and right sides */
+  background: linear-gradient(90deg, rgba(3, 2, 6, 0.8) 0%, rgba(3, 2, 6, 0.4) 30%, rgba(3, 2, 6, 0) 50%, rgba(3, 2, 6, 0.4) 70%, rgba(3, 2, 6, 0.8) 100%),
+              linear-gradient(180deg, rgba(3, 2, 6, 0.5) 0%, rgba(3, 2, 6, 0) 25%, rgba(3, 2, 6, 0.5) 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Global Fixed Header Styles */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100; /* Stays above scrolling content */
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 80px; /* Aligns navigation buttons sutilly closer to the logo */
+  padding: 40px 60px 20px 60px;
+  width: 100%;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.logo-svg {
+  height: 28px;
+  width: auto;
+  color: var(--color-white);
+  transition: var(--transition-smooth);
+}
+
+.logo:hover .logo-svg {
+  color: var(--color-pink-primary);
+  filter: drop-shadow(0 0 12px var(--color-pink-glow));
+}
+
+.nav {
+  display: flex;
+  gap: 40px;
+}
+
+.nav-link {
+  color: var(--color-white);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  position: relative;
+  padding: 5px 0;
+  transition: var(--transition-smooth);
+  opacity: 0.85;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background-color: var(--color-pink-primary);
+  transition: var(--transition-smooth);
+}
+
+.nav-link:hover {
+  opacity: 1;
+  color: var(--color-pink-primary);
+  text-shadow: 0 0 12px var(--color-pink-glow);
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-left: auto; /* Pushes category-tag and bottle-icon to the extreme right */
+}
+
+.category-tag {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  opacity: 0.85;
+}
+
+.bottle-icon-wrapper {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-white-dark);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+  cursor: pointer;
+}
+
+.bottle-icon-wrapper:hover {
+  border-color: var(--color-white);
+  background-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+.bottle-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Global Fixed Footer Styles */
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100; /* Stays above scrolling content */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 80px 35px 80px; /* Lifted sutilly from absolute bottom */
+  width: 100%;
+  pointer-events: none; /* Let scroll events pass through if cursor rests on footer area */
+}
+
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin-left: auto;
+  pointer-events: auto; /* Restore events for badge click/hovers */
+}
+
+.taste-text {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--color-white-trans);
+}
+
+/* Circular Rotating Badge stamp */
+.seoul-badge-wrapper {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-8px); /* Lifted sutilly upwards so it has breathing room and aligns beautifully */
+}
+
+.seoul-badge {
+  width: 100%;
+  height: 100%;
+  filter: brightness(0) invert(1); /* Turns dark/black PNG details into solid white */
+  opacity: 0.7; /* Soft semi-transparent white matching other footer elements */
+  animation: spinSlow 30s linear infinite;
+  transition: var(--transition-smooth);
+  cursor: pointer;
+}
+
+.seoul-badge-wrapper:hover .seoul-badge {
+  opacity: 1;
+  filter: brightness(0) invert(1) drop-shadow(0 0 15px var(--color-pink-glow)); /* White with glowing pink neón drop-shadow */
+}
+
+/* ==========================================================================
+   Section 1 Layout
+   ========================================================================== */
+.hero-container {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  padding: 120px 80px 100px 80px; /* Pushed bottom boundary up to prevent any overlaps with footer */
+  flex-grow: 1;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-content-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 600px;
+  animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform;
+}
+
+.hero-title {
+  font-family: var(--font-serif);
+  font-size: 8.5rem;
+  font-weight: 700;
+  line-height: 0.82;
+  margin-bottom: 25px;
+  display: flex;
+  flex-direction: column;
+}
+
+.title-line {
+  display: block;
+}
+
+.title-white {
+  color: var(--color-white);
+}
+
+.title-pink {
+  color: var(--color-pink-primary);
+  text-shadow: 0 0 40px rgba(255, 26, 117, 0.2);
+}
+
+.title-offset {
+  margin-left: 5px;
+}
+
+.korean-subtext {
+  font-size: 16px;
+  font-weight: 400;
+  color: #d15682; /* Custom soft magenta */
+  letter-spacing: 0.5px;
+  margin-bottom: 40px;
+  opacity: 0.95;
+}
+
+.desc-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 50px;
+}
+
+.desc-line {
+  font-size: 14px;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+  color: var(--color-white-trans);
+}
+
+/* Pill Button: Discover The Ritual */
+.btn-discover {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 30px 8px 8px;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1.5px solid var(--color-white-dark);
+  border-radius: 50px;
+  text-decoration: none;
+  transition: var(--transition-smooth);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.arrow-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--color-pink-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+  box-shadow: 0 4px 15px rgba(255, 26, 117, 0.3);
+}
+
+.arrow-svg {
+  width: 18px;
+  height: 18px;
+  color: var(--color-white);
+  transition: var(--transition-smooth);
+}
+
+.btn-text {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--color-white);
+  transition: var(--transition-smooth);
+}
+
+.btn-discover:hover {
+  border-color: var(--color-white);
+  background-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.15),
+              0 0 15px var(--color-pink-glow);
+  transform: translateY(-2px);
+}
+
+.btn-discover:hover .arrow-circle {
+  transform: scale(1.05);
+  background-color: var(--color-pink-neon);
+  box-shadow: 0 0 20px rgba(255, 0, 127, 0.6);
+}
+
+.btn-discover:hover .arrow-svg {
+  transform: translate(2px, -2px);
+}
+
+/* Section 1 Right Badge Column */
+.hero-content-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 45px;
+  padding-right: 20px;
+  animation: fadeInRight 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform;
+  height: 100%;
+}
+
+.info-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.info-badge-circle {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background-color: rgba(3, 2, 6, 0.4);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+  color: var(--color-white-trans);
+}
+
+.info-badge-circle svg {
+  width: 22px;
+  height: 22px;
+  transition: var(--transition-smooth);
+}
+
+.info-badge-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.badge-label, .badge-sublabel {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--color-white-trans);
+  transition: var(--transition-smooth);
+}
+
+.info-badge:hover {
+  transform: translateY(-5px);
+}
+
+.info-badge:hover .info-badge-circle {
+  border-color: var(--color-pink-primary);
+  background-color: rgba(255, 26, 117, 0.1);
+  color: var(--color-white);
+  box-shadow: 0 0 20px rgba(255, 26, 117, 0.3);
+}
+
+.info-badge:hover .info-badge-circle svg {
+  transform: scale(1.15) rotate(15deg);
+}
+
+.info-badge:hover .badge-label,
+.info-badge:hover .badge-sublabel {
+  color: var(--color-white);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+/* ==========================================================================
+   Section 2 Layout (Editorial Minimalist)
+   ========================================================================== */
+.ritual-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  padding: 120px 80px 70px 80px; /* Pushed bottom boundary up sutilly to give room above footer */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.ritual-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  animation: fadeInUp 1s ease-out both;
+}
+
+.ritual-header-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--color-white-dim);
+}
+
+.ritual-header-line {
+  width: 60px;
+  height: 1px;
+  background-color: var(--color-white-dark);
+}
+
+.ritual-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-grow: 1;
+  justify-content: flex-end; /* Aligns editorial texts at the bottom as requested by the user */
+  padding-bottom: 10px; /* Sits extremely close to the bottom as requested */
+  width: 100%;
+  will-change: transform;
+}
+
+.ritual-title {
+  font-family: var(--font-serif);
+  font-size: 7.2rem;
+  font-weight: 700;
+  line-height: 0.85;
+  color: var(--color-white);
+  margin-bottom: 25px;
+  text-align: left;
+}
+
+.title-dot {
+  color: var(--color-pink-primary);
+  text-shadow: 0 0 15px var(--color-pink-glow);
+}
+
+.ritual-desc-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 50px;
+}
+
+.ritual-desc-line {
+  font-size: 14px;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+  color: var(--color-white-trans);
+  text-align: left;
+}
+
+/* ==========================================================================
+   Section 3 Layout (Symmetric Split-Badges)
+   ========================================================================== */
+.section3-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  padding: 120px 80px 100px 80px; /* Space for global header/footers */
+  display: grid;
+  grid-template-columns: 1fr 280px 1fr; /* 3-column split-grid: Left cards, Middle bottle spacer, Right cards */
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section3-center-spacer {
+  pointer-events: none; /* Ignore pointer events so background bottle is still responsive if needed */
+  height: 100%;
+  width: 100%;
+}
+
+.section3-left-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* Align all left badges to the right (hugging the center bottle) */
+  gap: 55px; /* Vertical gap between badges */
+  will-change: transform;
+}
+
+.section3-right-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Align all right badges to the left (hugging the center bottle) */
+  gap: 55px; /* Vertical gap between badges */
+  will-change: transform;
+}
+
+/* Split Badge Row Component */
+.ritual-badge {
+  display: flex;
+  align-items: center;
+  gap: 24px; /* Increased gap sutilly for a richer, spacious look */
+  text-align: left;
+  width: 100%;
+  max-width: 440px; /* Increased max width to give the text and lines more breathing room */
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  border-bottom: 1.5px solid rgba(255, 26, 117, 0.12); /* Ultra-thin glowing divider line below badges */
+  padding-bottom: 25px;
+}
+
+.section3-left-col .ritual-badge {
+  justify-content: flex-end; /* Group text and circle to the right side of the column */
+}
+
+.section3-left-col .ritual-badge-text {
+  text-align: right; /* Text right-aligned pointing inwards to the circle icon */
+}
+
+/* Dynamic outward slide on hover */
+.section3-left-col .ritual-badge:hover {
+  transform: translateX(-10px);
+}
+
+.section3-right-col .ritual-badge:hover {
+  transform: translateX(10px);
+}
+
+.ritual-badge-circle {
+  width: 90px; /* Enlarged circle sizes to make them feel highly detailed and impactful */
+  height: 90px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255, 26, 117, 0.4); /* Thicker premium outline */
+  background-color: rgba(3, 2, 6, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-pink-primary);
+  flex-shrink: 0;
+  transition: var(--transition-smooth);
+  box-shadow: 0 0 25px rgba(255, 26, 117, 0.15);
+  position: relative; /* Position relative for the pseudo-elements (outer rings and HUD lines) */
+}
+
+/* Concentric outer ring that spins slowly and sparkles on hover */
+.ritual-badge-circle::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: -9px;
+  right: -9px;
+  bottom: -9px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(255, 26, 117, 0.25);
+  pointer-events: none;
+  animation: spinSlow 35s linear infinite;
+  transition: var(--transition-smooth);
+  opacity: 0.8;
+}
+
+.ritual-badge:hover .ritual-badge-circle::before {
+  border-color: var(--color-pink-neon);
+  box-shadow: 0 0 15px var(--color-pink-glow);
+  top: -11px;
+  left: -11px;
+  right: -11px;
+  bottom: -11px;
+  animation-duration: 12s; /* Spins faster on hover! */
+  opacity: 1;
+}
+
+/* HUD Connecting Lines towards the bottle */
+/* Left Column: Line extends from the right edge of the circle towards the right */
+.section3-left-col .ritual-badge-circle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  width: 90px; /* Bridge the gap to the bottle */
+  height: 1.5px;
+  background: linear-gradient(90deg, var(--color-pink-neon) 0%, rgba(255, 26, 117, 0) 100%);
+  transform: translateY(-50%) scaleX(0);
+  transform-origin: left center;
+  transition: var(--transition-smooth);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.section3-left-col .ritual-badge:hover .ritual-badge-circle::after {
+  transform: translateY(-50%) scaleX(1);
+  opacity: 0.8;
+}
+
+/* Right Column: Line extends from the left edge of the circle towards the left */
+.section3-right-col .ritual-badge-circle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 90px; /* Bridge the gap to the bottle */
+  height: 1.5px;
+  background: linear-gradient(-90deg, var(--color-pink-neon) 0%, rgba(255, 26, 117, 0) 100%);
+  transform: translateY(-50%) scaleX(0);
+  transform-origin: right center;
+  transition: var(--transition-smooth);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.section3-right-col .ritual-badge:hover .ritual-badge-circle::after {
+  transform: translateY(-50%) scaleX(1);
+  opacity: 0.8;
+}
+
+.ritual-badge:hover .ritual-badge-circle {
+  color: var(--color-white);
+  background-color: var(--color-pink-primary);
+  border-color: var(--color-pink-primary);
+  box-shadow: 0 0 30px var(--color-pink-glow);
+  transform: scale(1.06);
+}
+
+.ritual-badge-circle svg {
+  width: 34px; /* Enlarged icons inside the circle to feel substantial and complete */
+  height: 34px;
+  transition: var(--transition-smooth);
+  z-index: 2;
+}
+
+.ritual-badge-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ritual-badge-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--color-white);
+  transition: var(--transition-smooth);
+}
+
+.ritual-badge:hover .ritual-badge-title {
+  color: var(--color-pink-primary);
+  text-shadow: 0 0 8px var(--color-pink-glow);
+}
+
+.ritual-badge-desc {
+  font-size: 12px;
+  font-weight: 300;
+  line-height: 1.4;
+  color: var(--color-white-dim);
+}
+
+/* ==========================================================================
+   Section 4 Layout (Get JINRO - Open The Ritual)
+   ========================================================================== */
+.bg-wrapper-section4 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* Elegant deep left vignette to maximize contrast for the neon texts/button against the fridge background */
+  background: linear-gradient(90deg, rgba(3, 2, 6, 0.96) 0%, rgba(3, 2, 6, 0.6) 45%, rgba(3, 2, 6, 0) 70%),
+              linear-gradient(180deg, rgba(3, 2, 6, 0.4) 0%, rgba(3, 2, 6, 0) 25%, rgba(3, 2, 6, 0.4) 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.section4-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  padding: 120px 80px 70px 80px; /* Aligns with all other containers, pushing sutilly from bottom */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* Align contents to the very bottom to look extremely spacious and editorial */
+}
+
+.section4-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-grow: 1;
+  justify-content: flex-end; /* Push items downwards */
+  padding-bottom: 10px; /* Sits close to the bottom above the footer */
+  max-width: 580px;
+  will-change: transform;
+}
+
+.section4-header-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--color-white-dim);
+  margin-bottom: 20px;
+}
+
+.section4-title {
+  font-family: var(--font-serif);
+  font-size: 6.8rem;
+  font-weight: 700;
+  line-height: 0.85;
+  margin-bottom: 25px;
+  display: flex;
+  flex-direction: column;
+}
+
+.section4-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 40px;
+}
+
+.section4-desc-line {
+  font-size: 14px;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+  color: var(--color-white-trans);
+}
+
+/* Glowing Rounded Pill Button matching Discover style */
+.btn-get-jinro {
+  display: inline-flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 35px;
+  background-color: rgba(255, 26, 117, 0.03);
+  border: 1.5px solid var(--color-pink-primary);
+  border-radius: 50px; /* Rounded pill design */
+  text-decoration: none;
+  transition: var(--transition-smooth);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  margin-bottom: 15px; /* Sits nicely above the base of content */
+  box-shadow: 0 0 15px rgba(255, 26, 117, 0.15);
+}
+
+.btn-get-text {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: var(--color-white);
+  transition: var(--transition-smooth);
+}
+
+.btn-get-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+  color: var(--color-pink-primary);
+}
+
+.btn-get-arrow svg {
+  width: 15px;
+  height: 15px;
+  transition: var(--transition-smooth);
+}
+
+.btn-get-jinro:hover {
+  background-color: var(--color-pink-primary);
+  box-shadow: 0 0 35px var(--color-pink-glow),
+              0 0 15px rgba(255, 26, 117, 0.4);
+  border-color: var(--color-pink-primary);
+  transform: translateY(-2px);
+}
+
+.btn-get-jinro:hover .btn-get-text {
+  color: var(--color-white);
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+}
+
+.btn-get-jinro:hover .btn-get-arrow {
+  color: var(--color-white);
+  transform: translateX(4px);
+}
+
+/* Dynamic Button Ignite & Flash overlay */
+.btn-get-jinro {
+  position: relative; /* Essential for absolute expanding outline child */
+}
+
+.btn-get-jinro::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50px;
+  border: 2px solid var(--color-pink-primary);
+  opacity: 0;
+  pointer-events: none;
+  transition: none;
+  z-index: 1;
+}
+
+.btn-get-jinro.ignited {
+  animation: buttonIgnite 0.8s ease-out;
+}
+
+.btn-get-jinro.ignited::before {
+  animation: bloomExpand 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) both;
+}
+
+/* Floating Cinematic Holographic HUD Video Card Preview */
+.section4-video-wrapper {
+  position: absolute;
+  right: 80px;
+  top: 50%; /* Centered vertically on the right side */
+  width: 540px; /* Expanded size from 480px */
+  height: 304px; /* Cinematic 16:9 aspect ratio */
+  border-radius: 14px;
+  padding: 1.5px; /* Subtly frames the glowing borders */
+  background: linear-gradient(135deg, rgba(255, 26, 117, 0.22) 0%, rgba(255, 255, 255, 0.04) 100%);
+  box-shadow: 0 10px 45px rgba(0, 0, 0, 0.55), 0 0 35px rgba(255, 26, 117, 0.05);
+  opacity: 0;
+  transform: translate3d(80px, -50%, 0) scale(0.85); /* Combined translate3d and vertical centering! */
+  filter: brightness(2.8) blur(22px);
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.9s ease;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 15;
+}
+
+.section4-video-wrapper.video-active {
+  opacity: 1;
+  transform: translate3d(0, -50%, 0) scale(1);
+  filter: brightness(1) blur(0);
+  pointer-events: auto;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), 0 0 35px rgba(255, 26, 117, 0.25);
+}
+
+.video-card-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 13px;
+  background-color: rgba(3, 2, 6, 0.88);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-cover-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center center;
+  opacity: 0.72;
+  transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.8s ease;
+}
+
+.section4-video-wrapper:hover .video-cover-bg {
+  opacity: 0.88;
+  transform: scale(1.06); /* Luxurious slow cinematic hover zoom */
+}
+
+.video-overlay-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(255, 26, 117, 0.25) 0%, rgba(3, 2, 6, 0.45) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Glowing play trigger button */
+.video-play-btn {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background-color: rgba(3, 2, 6, 0.82);
+  border: 2px solid var(--color-pink-primary);
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  position: relative;
+  transition: var(--transition-smooth);
+  box-shadow: 0 0 25px rgba(255, 26, 117, 0.25);
+}
+
+.video-play-icon {
+  width: 32px; /* Increased from 24px for high visual weight */
+  height: 32px;
+  color: var(--color-white);
+  transform: translateX(2px); /* Centered mathematically inside play ring */
+  transition: var(--transition-smooth);
+}
+
+.video-play-ring {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(255, 26, 117, 0.35);
+  animation: spinSlow 30s linear infinite;
+  transition: var(--transition-smooth);
+  pointer-events: none;
+}
+
+.video-play-btn:hover {
+  background-color: var(--color-pink-primary);
+  border-color: var(--color-pink-primary);
+  box-shadow: 0 0 35px var(--color-pink-glow);
+  transform: scale(1.08);
+}
+
+.video-play-btn:hover .video-play-ring {
+  border-color: var(--color-pink-primary); /* Stays in the premium pink color, not white */
+  animation-duration: 12s; /* Rotates rapidly on hover */
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+}
+
+.video-play-btn:hover .video-play-icon {
+  transform: translateX(2px) scale(1.12);
+}
+
+/* Digital scan HUD layouts overlays */
+.video-hud-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0.55;
+}
+
+/* Keyframes for ignition sparks and holographic expansion */
+@keyframes bloomExpand {
+  0% {
+    transform: scale(0.95);
+    border-color: var(--color-pink-neon);
+    box-shadow: 0 0 25px var(--color-pink-glow);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.4);
+    border-color: rgba(255, 0, 127, 0);
+    box-shadow: 0 0 60px rgba(255, 0, 127, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes buttonIgnite {
+  0% {
+    transform: scale(0.96);
+    box-shadow: 0 0 45px var(--color-pink-glow), 0 0 25px var(--color-pink-neon);
+    background-color: var(--color-pink-primary);
+  }
+  40% {
+    transform: scale(1.05);
+    box-shadow: 0 0 65px var(--color-pink-glow), 0 0 35px var(--color-pink-neon);
+    background-color: var(--color-pink-neon);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 15px rgba(255, 26, 117, 0.15);
+  }
+}
+
+/* Animations */
+@keyframes spinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN - Mobile Version Adaptation
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .hero-title {
+    font-size: 6.8rem;
+  }
+  .ritual-title {
+    font-size: 5.5rem;
+  }
+  .header {
+    padding: 30px 40px;
+  }
+  .hero-container, .ritual-container, .section3-container, .section4-container {
+    padding: 120px 40px 100px 40px;
+  }
+  .section3-left-col, .section3-right-col {
+    gap: 30px;
+  }
+  .ritual-badge {
+    max-width: 280px;
+  }
+  .section3-container {
+    grid-template-columns: 1fr 160px 1fr;
+  }
+  .section4-video-wrapper {
+    width: 420px; /* Slightly larger on tablet */
+    height: 236px;
+    right: 40px;
+    top: 50%;
+    transform: translate3d(40px, -50%, 0) scale(0.9);
+  }
+  .section4-video-wrapper.video-active {
+    transform: translate3d(0, -50%, 0) scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    overflow-y: auto; /* Natural scrolling on mobile */
+    height: auto;
+  }
+  
+  #root {
+    height: auto;
+  }
+
+  .snap-scroll-container {
+    height: auto;
+    overflow-y: visible;
+    scroll-snap-type: none; /* Disable scroll snapping on mobile for smooth vertical scrolling experience */
+  }
+
+  .section-hero, .section-ritual, .section-section3, .section-section4 {
+    height: auto;
+    min-height: 100vh;
+    scroll-snap-align: none;
+    padding-bottom: 60px;
+  }
+
+  .section-hero {
+    background-position: 70% center;
+  }
+
+  .section-ritual {
+    background-position: 30% center;
+  }
+
+  .section-section3 {
+    background-position: 50% center; /* Keep bottle centered on mobile Section 3 */
+  }
+  
+  .bg-wrapper {
+    background: linear-gradient(180deg, rgba(3, 2, 6, 0.7) 0%, rgba(3, 2, 6, 0.45) 40%, rgba(3, 2, 6, 0.85) 100%);
+  }
+
+  .bg-wrapper-ritual {
+    background: linear-gradient(180deg, rgba(3, 2, 6, 0.8) 0%, rgba(3, 2, 6, 0.5) 40%, rgba(3, 2, 6, 0.9) 100%);
+  }
+
+  .bg-wrapper-section3 {
+    background: linear-gradient(180deg, rgba(3, 2, 6, 0.8) 0%, rgba(3, 2, 6, 0.6) 40%, rgba(3, 2, 6, 0.9) 100%);
+  }
+
+  /* Reset global fixed elements to relative/natural layout on mobile scroll */
+  .header {
+    position: relative;
+    padding: 20px 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .logo-svg {
+    height: 22px;
+  }
+
+  .nav {
+    order: 3;
+    width: 100%;
+    justify-content: space-around;
+    gap: 10px;
+    margin-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 10px 0;
+  }
+
+  .nav-link {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  .header-right {
+    gap: 10px;
+  }
+
+  .category-tag {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  /* Section 1 Mobile Layout */
+  .hero-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    padding: 20px 20px 40px 20px;
+    gap: 40px;
+    height: auto;
+  }
+
+  .hero-content-left {
+    max-width: 100%;
+    align-items: center;
+    text-align: center;
+    order: 1;
+    transform: none !important; /* Disable parallax on mobile to prevent layout shift */
+  }
+
+  .hero-title {
+    font-size: 4.5rem;
+    line-height: 0.85;
+    margin-bottom: 15px;
+  }
+
+  .title-offset {
+    margin-left: 0;
+  }
+
+  .korean-subtext {
+    font-size: 13px;
+    margin-bottom: 25px;
+  }
+
+  .desc-lines {
+    margin-bottom: 30px;
+    gap: 6px;
+  }
+
+  .desc-line {
+    font-size: 13px;
+  }
+
+  .btn-discover {
+    padding: 6px 24px 6px 6px;
+  }
+
+  .arrow-circle {
+    width: 36px;
+    height: 36px;
+  }
+
+  .arrow-svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .btn-text {
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  .hero-content-right {
+    order: 2;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    padding-right: 0;
+    width: 100%;
+    margin-top: 20px;
+    transform: none !important;
+  }
+
+  .info-badge {
+    gap: 8px;
+  }
+
+  .info-badge-circle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .info-badge-circle svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .badge-label, .badge-sublabel {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+
+  /* Section 2 Mobile Layout */
+  .ritual-container {
+    padding: 40px 20px;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .ritual-header {
+    justify-content: center;
+  }
+
+  .ritual-content-wrapper {
+    align-items: center;
+    text-align: center;
+    transform: none !important; /* Disable parallax on mobile */
+  }
+
+  .ritual-title {
+    font-size: 3.8rem;
+    line-height: 0.85;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .ritual-desc-lines {
+    margin-bottom: 40px;
+    gap: 6px;
+  }
+
+  .ritual-desc-line {
+    font-size: 13px;
+    text-align: center;
+  }
+
+  /* Section 3 Mobile Layout: All 6 columns stack vertically into a single clean column */
+  .section3-container {
+    grid-template-columns: 1fr;
+    gap: 35px;
+    padding: 40px 20px;
+    height: auto;
+  }
+
+  .section3-center-spacer {
+    display: none;
+  }
+
+  .section3-left-col, .section3-right-col {
+    align-items: center;
+    width: 100%;
+    gap: 35px;
+    transform: none !important;
+  }
+
+  .ritual-badge {
+    max-width: 320px;
+    text-align: left;
+    width: 100%;
+  }
+
+  /* Make Left badges reverse JSX order on mobile so circles are uniformly on the left */
+  .section3-left-col .ritual-badge {
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+  }
+
+  .section3-left-col .ritual-badge-text {
+    text-align: left;
+  }
+
+  .ritual-badge-circle {
+    width: 64px !important;
+    height: 64px !important;
+    border-width: 1.5px !important;
+  }
+
+  .ritual-badge-circle svg {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  .ritual-badge-circle::before,
+  .ritual-badge-circle::after {
+    display: none !important; /* Hide dashed rings and HUD lines on mobile to preserve layout */
+  }
+
+  /* Section 4 Mobile Layout */
+  .section-section4 {
+    height: auto;
+    min-height: 100vh;
+    scroll-snap-align: none;
+    padding-bottom: 60px;
+    background-position: 40% center; /* Keep hand and bottles beautifully cropped */
+  }
+
+  .bg-wrapper-section4 {
+    background: linear-gradient(180deg, rgba(3, 2, 6, 0.8) 0%, rgba(3, 2, 6, 0.55) 45%, rgba(3, 2, 6, 0.9) 100%);
+  }
+
+  .section4-container {
+    padding: 40px 20px;
+    height: auto;
+  }
+
+  .section4-content {
+    align-items: center;
+    text-align: center;
+    max-width: 100%;
+    transform: none !important; /* Disable parallax on mobile */
+  }
+
+  .section4-title {
+    font-size: 3.8rem;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .section4-desc {
+    margin-bottom: 30px;
+  }
+
+  .section4-desc-line {
+    text-align: center;
+    font-size: 13px;
+  }
+
+  .btn-get-jinro {
+    padding: 12px 28px;
+    margin-bottom: 10px; /* Reduced since no icons below it */
+  }
+
+  .section4-video-wrapper {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    max-width: 320px;
+    height: 180px; /* 16:9 cinematic ratio */
+    margin: 30px auto 0 auto;
+    opacity: 0;
+    transform: translate3d(0, 30px, 0) scale(0.92);
+    filter: brightness(2) blur(10px);
+    transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s ease;
+  }
+
+  .section4-video-wrapper.video-active {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: brightness(1) blur(0);
+  }
+
+  /* Reset global footer to relative scroll at bottom on mobile */
+  .footer {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    flex-direction: column;
+    gap: 20px;
+    padding: 40px 20px 30px 20px;
+    text-align: center;
+    pointer-events: auto;
+  }
+
+  .footer-right {
+    flex-direction: column;
+    gap: 15px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .taste-text {
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+
+  .seoul-badge-wrapper {
+    width: 70px;
+    height: 70px;
+    transform: none !important;
+  }
+}
