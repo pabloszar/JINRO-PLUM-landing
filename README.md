@@ -1,16 +1,38 @@
-# React + Vite
+# CLAN — Supervivencia paleolítica (prototipo)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Te separaste de tu tribu. Sobrevive solo, fabrica herramientas, caza fieras y gana renombre hasta que una tribu te acepte.
 
-Currently, two official plugins are available:
+Mezcla de la progresión de *Patapon* (ritmo + mejoras) con un mundo abierto procedural.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Jugar
 
-## React Compiler
+```bash
+npm install
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Tecla | Acción |
+|---|---|
+| A / D | moverse |
+| W / Espacio | saltar |
+| J / Click | atacar — **al ritmo del tambor = golpe perfecto (x1.5)**, 4 seguidos = **Fervor** |
+| E | recolectar / hablar |
+| F | comer (cerca del fuego la carne se asa y alimenta el doble) |
+| C | fabricar |
+| M | silenciar |
 
-## Expanding the ESLint configuration
+En móvil aparecen botones táctiles.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Lo que hay en el prototipo
+- Mundo infinito en ambas direcciones con 3 biomas (bosque, estepa, tierras rocosas).
+- Ciclo día/noche: de noche salen más depredadores; el fuego ilumina, cura y ahuyenta bestias (no a los humanos).
+- Fauna: ciervo gigante, lobo terrible, ave del terror, dientes de sable, mamut lanudo, neandertales y cazadores hostiles. Más peligro cuanto más lejos del origen.
+- Fabricación: lanza, hacha, fogata, ropa de piel, tambor de guerra, lanza de sílex, armadura de hueso, collar de colmillos.
+- Hambre, vida, muerte (pierdes la mitad del inventario y reapareces en tu última fogata).
+- Objetivo del capítulo 1: llegar al humo de la tribu con 12 de renombre.
+- Guardado automático en el navegador.
+
+## Estructura
+- `src/data.js` — balance: animales, recursos, recetas.
+- `src/world.js` — ruido, biomas, generación por chunks.
+- `src/main.js` — loop, IA, combate, render y HUD.

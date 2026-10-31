@@ -2,19 +2,54 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JINRO Plum - The Plum Ritual</title>
-    <meta name="description" content="Discover the Plum Ritual. Born in Korea, crafted with real plum. Smooth, fresh, unforgettable JINRO Plum Soju." />
-    
-    <!-- Google Fonts: Cormorant Garamond for elegant serif title, Outfit for modern UI -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Clan — Supervivencia Paleolítica</title>
+    <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <canvas id="game"></canvas>
+
+    <div id="start" class="overlay">
+      <div class="card">
+        <h1>CLAN</h1>
+        <p class="story">Hace 40.000 años. Una estampida te separó de tu tribu.<br />
+          Estás solo. Sobrevive, hazte fuerte y encuentra un pueblo que te acepte.</p>
+        <div class="controls">
+          <div><b>A / D</b> moverse · <b>W / Espacio</b> saltar</div>
+          <div><b>J / Click</b> atacar — <i>al ritmo del tambor = golpe perfecto</i></div>
+          <div><b>E</b> recolectar / hablar · <b>F</b> comer · <b>C</b> fabricar</div>
+        </div>
+        <button id="btn-start">Empezar</button>
+        <button id="btn-new" class="ghost">Nueva partida</button>
+      </div>
+    </div>
+
+    <div id="craft" class="overlay hidden">
+      <div class="card">
+        <h2>Fabricar</h2>
+        <div id="recipes"></div>
+        <button id="btn-close-craft" class="ghost">Cerrar (C)</button>
+      </div>
+    </div>
+
+    <div id="dialog" class="overlay hidden">
+      <div class="card">
+        <p id="dialog-text"></p>
+        <button id="btn-dialog">Continuar</button>
+      </div>
+    </div>
+
+    <div id="touch">
+      <div class="pad left">
+        <button data-k="left">◀</button><button data-k="right">▶</button>
+      </div>
+      <div class="pad right">
+        <button data-k="craft">🔨</button><button data-k="eat">🍖</button>
+        <button data-k="gather">✋</button><button data-k="jump">⤒</button>
+        <button data-k="attack" class="big">⚔</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
   </body>
 </html>
-
