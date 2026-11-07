@@ -204,10 +204,10 @@ function applyTime(t) {
 
 // ---------- Cámara ----------
 // Valores que el jugador controla; los modos los sobrescriben un momento y luego vuelven.
-const user = { yaw: 0, pitch: 32, dist: 11 };
-const cam = { yaw: 0, pitch: 32, dist: 11, lookY: 1.2 };
-const LIMITS = { yaw: 30, pitchMin: 6, pitchMax: 62, distMin: 3.5, distMax: 34 };
-let freeYaw = false; // V: giro libre de 360° para comparar con el límite de ±30°
+const user = { yaw: 0, pitch: 14, dist: 6 };
+const cam = { yaw: 0, pitch: 14, dist: 6, lookY: 1.45 };
+const LIMITS = { yaw: 30, pitchMin: 3, pitchMax: 45, distMin: 2.5, distMax: 16 };
+const freeYaw = true; // decidido en v0.4: giro libre de 360°
 const clampYaw = (y) => (freeYaw ? y : clamp(y, -LIMITS.yaw, LIMITS.yaw));
 const lead = { yaw: 0, dist: 0, pitch: 0, x: 0, z: 0 }; // ajustes automáticos según hacia dónde caminas
 let mode = 'Exploración';
@@ -220,7 +220,6 @@ addEventListener('keydown', (e) => {
   if (e.code === 'KeyN') nextTime();
   if (e.code === 'KeyC') toggleSit();
   if (e.code === 'KeyH') document.getElementById('help').classList.toggle('hidden');
-  if (e.code === 'KeyV') { freeYaw = !freeYaw; if (!freeYaw) user.yaw = clamp(((user.yaw + 180) % 360 + 360) % 360 - 180, -LIMITS.yaw, LIMITS.yaw); toast(freeYaw ? 'Giro libre 360°' : 'Giro limitado a ±30°'); }
 });
 addEventListener('keyup', (e) => { keys[e.code] = false; });
 function nextTime() { timeIdx = (timeIdx + 1) % 3; }
@@ -390,23 +389,27 @@ function update(dt) {
   // a los lados: gira hacia donde vas y deja más espacio delante del personaje.
   const vx = Math.sin(P.facing) * P.speed, vz = Math.cos(P.facing) * P.speed;
   const vFwd = (vx * fwd.x + vz * fwd.z) / 6.2, vSide = (vx * right.x + vz * right.z) / 6.2;
-  lead.dist = damp(lead.dist, clamp(-vFwd, 0, 1) * 0.55, 1.1, dt);
-  lead.pitch = damp(lead.pitch, clamp(-vFwd, 0, 1) * 6, 1.1, dt);
+  lead.dist = damp(lead.dist, clamp(-vFwd, 0, 1) * 0.22, 1.1, dt);
+  lead.pitch = damp(lead.pitch, clamp(-vFwd, 0, 1) * 3, 1.1, dt);
   lead.yaw = damp(lead.yaw, -vSide * 16, 0.9, dt);
   lead.x = damp(lead.x, vx * 0.45, 1.5, dt); lead.z = damp(lead.z, vz * 0.45, 1.5, dt);
-  const want = { yaw: clampYaw(user.yaw + lead.yaw), pitch: user.pitch + lead.pitch, dist: user.dist * (1 + lead.dist), lookY: 1.2 };
+  const want = { yaw: clampYaw(user.yaw + lead.yaw), pitch: user.pitch + lead.pitch, dist: user.dist * (1 + lead.dist), lookY: 1.45 };
   if (tension) {
     // encuadre de tensión: cámara baja, entre tú y la fiera, girada para que ambos queden a la vista
-    want.pitch = 12; want.dist = clamp(wd * 0.55 + 4, 6.5, 13); want.lookY = 1.0;
-    const side = (W.x - P.x) * right.x + (W.z - P.z) * right.z;
-    want.yaw = clampYaw(user.yaw + clamp(-side * 2.2, -25, 25));
+    want.pitch = 10; want.dist = clamp(wd * 0.25 + 4.5, 6, 9); want.lookY = 1.4;
+    // la cámara gira poco a poco para mirar por encima de tu hombro hacia la fiera;
+    // se mueve el valor del jugador, así al terminar la tensión no hay un salto de vuelta
+    const toThreat = Math.atan2(-(W.x - P.x), -(W.z - P.z)) / DEG + 14;
+    const diff = ((toThreat - user.yaw + 540) % 360) - 180;
+    user.yaw += diff * (1 - Math.exp(-1.6 * dt));
+    want.yaw = user.yaw;
   }
-  if (contemplate) { want.pitch = 5; want.dist = 9; want.lookY = 2.6; want.yaw = user.yaw + Math.sin(elapsed * 0.08) * 12; }
+  if (contemplate) { want.pitch = 4; want.dist = 7; want.lookY = 2.2; want.yaw = user.yaw + Math.sin(elapsed * 0.08) * 12; }
   const k = tension ? 3 : 1.6;
   cam.yaw = damp(cam.yaw, want.yaw, k * 1.5, dt); cam.pitch = damp(cam.pitch, want.pitch, k, dt);
   cam.dist = damp(cam.dist, want.dist, k, dt); cam.lookY = damp(cam.lookY, want.lookY, k, dt);
-  const focus = tension ? 0.4 : 0;
-  camTarget.lerp(new THREE.Vector3(lerp(P.x + lead.x, W.x, focus), py + cam.lookY, lerp(P.z + lead.z, W.z, focus)), 1 - Math.exp(-(tension ? 3 : 8) * dt));
+  const focus = tension ? 0.15 : 0;
+  camTarget.lerp(new THREE.Vector3(lerp(P.x + lead.x, W.x, focus), lerp(py, wy, focus) + cam.lookY, lerp(P.z + lead.z, W.z, focus)), 1 - Math.exp(-(tension ? 3 : 8) * dt));
   const yr = cam.yaw * DEG, pr2 = cam.pitch * DEG, h = Math.cos(pr2) * cam.dist;
   camera.position.set(camTarget.x + Math.sin(yr) * h, camTarget.y + Math.sin(pr2) * cam.dist, camTarget.z + Math.cos(yr) * h);
   const ground = heightAt(camera.position.x, camera.position.z) + 0.6;
