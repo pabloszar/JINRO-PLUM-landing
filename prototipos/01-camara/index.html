@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Clan · Prototipo de cámara</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="vignette"></div>
+    <div id="hud">
+      <div id="mode">Exploración</div>
+      <div id="time">Día</div>
+    </div>
+    <div id="toast"></div>
+    <div id="help">
+      <b>Prototipo 1 · Cámara y movimiento</b>
+      <div><kbd>WASD</kbd> caminar · <kbd>Shift</kbd> correr</div>
+      <div><kbd>Arrastrar</kbd> girar (±30°) e inclinar · <kbd>Rueda</kbd> acercar</div>
+      <div><kbd>Q</kbd>/<kbd>E</kbd> girar · <kbd>R</kbd>/<kbd>F</kbd> inclinar · <kbd>Z</kbd>/<kbd>X</kbd> acercar</div>
+      <div><kbd>C</kbd> sentarse junto al fuego · <kbd>N</kbd> día / atardecer / noche · <kbd>H</kbd> ocultar</div>
+      <div class="hint">Busca al lobo al noreste y a los mamuts al fondo. De noche, aléjate del fuego y espera unos segundos.</div>
+    </div>
+    <div id="buttons">
+      <button id="btn-sit">Sentarse</button>
+      <button id="btn-time">Día / noche</button>
+    </div>
+    <div id="stick"><div id="knob"></div></div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
