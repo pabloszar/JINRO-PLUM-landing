@@ -17,3 +17,4 @@ button { font: inherit; font-size: 13px; font-weight: 600; color: #1a1006; backg
 #stick.on { display: block; }
 #knob { position: absolute; left: 30px; top: 30px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255, 255, 255, 0.5); }
 @media (pointer: coarse) { #help { display: none; } }
+#ver { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); font-size: 11px; letter-spacing: 0.08em; opacity: 0.6; pointer-events: none; }
