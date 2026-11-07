@@ -8,6 +8,7 @@ export default defineConfig({
       input: {
         main: resolve(import.meta.dirname, 'index.html'),
         camara: resolve(import.meta.dirname, 'prototipos/01-camara/index.html'),
+        pelea: resolve(import.meta.dirname, 'prototipos/02-pelea/index.html'),
       },
     },
   },

@@ -4,6 +4,7 @@ Historial de versiones para armar los videos de avances. Cada versión anota su 
 
 | Versión | Commit | Fecha | Qué cambió | Material |
 | --- | --- | --- | --- | --- |
+| v0.5 · Pelea contra un lobo | `PENDIENTE` | 2026-11-07 | Prototipo 2. El lobo rodea, se acerca gruñendo y avisa antes de saltar (se agacha, orejas atrás, lomo erizado); a veces amaga. Lanzada, lanza firme (si salta contra ella se clava), esquiva con energía, contraataque cuando queda expuesto. Mordidas que dejan heridas: cojera, brazo herido, sangrado. Sin barras: el daño se ve en la pantalla y en el cuerpo. Latido, gruñido y golpes con pausa breve para dar peso. | [capturas y video](v0.5-pelea-lobo/) |
 | v0.4 · Cámara cercana | `aa25783` | 2026-11-07 | Giro libre de 360° como decisión final. Cámara mucho más cerca y baja, detrás del hombro, como un juego en tercera persona. En tensión, la cámara gira sola para mirar por encima del hombro hacia la fiera. | [capturas y video](v0.4-camara-cercana/) |
 | v0.3 · Cámara natural | `ab62e53` | 2026-11-07 | La cámara sigue al mouse sin hacer clic; se aleja sola al caminar hacia ella; gira y deja espacio hacia donde caminas; opción de probar giro libre de 360° (tecla V). | [capturas y video](v0.3-camara-natural/) |
 | v0.2 · Cámara 2.5D | `3e5a4ca` | 2026-11-07 | Primer mundo 3D con personajes 2D. Personaje que se ve de frente, espalda y perfil. Cámara que se inclina, gira ±30° y se acerca. Modos de tensión (lobo que acecha) y contemplación (sentado junto al fuego). Día, atardecer y noche con ojos que se adaptan a la oscuridad. Mamuts a lo lejos para dar escala. | [capturas](v0.2-camara-2.5d/) |
@@ -12,9 +13,10 @@ Historial de versiones para armar los videos de avances. Cada versión anota su 
 ## Decisiones que cambiaron el rumbo
 
 - **v0.1 → v0.2:** se descarta el 2D plano y la mecánica de ritmo; se elige 2.5D (personajes 2D en un mundo 3D) para dar profundidad y una cámara cinematográfica.
+- **v0.4 → v0.5:** con la cámara cerrada, se pasa al primer combate; se busca que pelear sea la última opción y que leer al animal sea la verdadera habilidad.
 - **v0.3 → v0.4:** el límite de giro de ±30° se sentía trabado y la vista alta parecía otro tipo de juego; se adopta giro libre y cámara cercana en tercera persona.
 - **v0.2 → v0.3:** el control de cámara con arrastre se sentía extraño; se pasa a un control estándar con el mouse y a una cámara que se anticipa al movimiento.
 
 ## Cómo se graba el material
 
-Las capturas y el video se generan con un navegador automatizado que juega una ruta fija (caminar, sentarse junto al fuego, pasar a la noche, encuentro con el lobo). Así cada versión se graba con el mismo recorrido y se puede comparar lado a lado en el video de avances.
+Las capturas y el video se generan con un navegador automatizado que juega una ruta fija (`herramientas/grabar-avance.cjs`) o, para las peleas, un bot que reacciona a las señales del lobo (`herramientas/grabar-pelea.cjs`) (caminar, sentarse junto al fuego, pasar a la noche, encuentro con el lobo). Así cada versión se graba con el mismo recorrido y se puede comparar lado a lado en el video de avances.
