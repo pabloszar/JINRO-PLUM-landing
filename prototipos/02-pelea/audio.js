@@ -1,5 +1,5 @@
 // Sonido generado en código (sin archivos). Arranca con la primera interacción del jugador.
-let ac = null, master = null, growlGain = null, windGain = null, nextBeat = 0;
+let ac = null, master = null, growlGain = null, windGain = null, nextBeat = 0, nextBreath = 0;
 
 function noiseBuffer(sec = 2) {
   const b = ac.createBuffer(1, ac.sampleRate * sec, ac.sampleRate);
@@ -55,8 +55,15 @@ export const sfx = {
 };
 
 // Llamar cada cuadro: gruñido (0..1) y latido (0..1, sube con el miedo y las heridas)
-export function ambience(growl, fear, dt) {
+export function ambience(growl, fear, dt, fatigue = 0) {
   if (!ready()) return;
+  // respiración agitada: cada vez más fuerte y rápida con el cansancio
+  if (fatigue > 0.25 && ac.currentTime >= nextBreath) {
+    const v = (fatigue - 0.25) * 0.5;
+    burst(1300, 0.22, v, 'bandpass');
+    setTimeout(() => burst(900, 0.28, v * 0.8, 'bandpass'), 320 - fatigue * 120);
+    nextBreath = ac.currentTime + 1.4 - fatigue * 0.8;
+  }
   growlGain.gain.setTargetAtTime(growl * 0.32, ac.currentTime, 0.12);
   windGain.gain.setTargetAtTime(0.035 * (1 - fear * 0.7), ac.currentTime, 0.5);
   if (fear < 0.05) return;

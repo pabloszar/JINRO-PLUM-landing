@@ -24,11 +24,10 @@
     </div>
     <div id="help">
       <b>Prototipo 2 · Pelea contra un lobo</b>
-      <div><kbd>WASD</kbd> caminar · <kbd>Shift</kbd> correr · <kbd>Mouse</kbd> cámara</div>
-      <div><kbd>Clic</kbd> / <kbd>J</kbd> lanzada · <kbd>Clic derecho</kbd> / <kbd>K</kbd> mantener la lanza firme</div>
-      <div><kbd>Espacio</kbd> esquivar (sin dirección: salto atrás)</div>
+      <div><kbd>WASD</kbd> caminar · <kbd>Shift</kbd> mantener: correr · tocar: esquivar · <kbd>Espacio</kbd> saltar</div>
+      <div><kbd>Clic</kbd> / <kbd>J</kbd> lanzada · <kbd>Clic derecho</kbd> / <kbd>K</kbd> mantener la lanza firme · <kbd>C</kbd> esquivar</div>
       <div><kbd>L</kbd> llamar al lobo · <kbd>N</kbd> día / noche · <kbd>B</kbd> barras de prueba · <kbd>H</kbd> ocultar</div>
-      <div class="hint">Lee al lobo: cuando se agacha, con las orejas atrás y el lomo erizado, va a saltar. Esquiva o recíbelo con la lanza firme; justo después de su salto queda expuesto. El fuego lo mantiene lejos.</div>
+      <div class="hint">Lee al lobo: cuando se agacha, con las orejas atrás y el lomo erizado, va a saltar. Esquiva en el último momento, sáltalo, o levanta la lanza firme justo antes: si te ve con la lanza apuntándole, no salta y te rodea. Justo después de su salto queda expuesto. El fuego lo mantiene lejos.</div>
     </div>
     <div id="buttons">
       <button id="btn-wolf">Llamar al lobo</button>
@@ -36,6 +35,7 @@
     </div>
     <div id="touch-actions">
       <button id="t-brace">Lanza firme</button>
+      <button id="t-jump">Saltar</button>
       <button id="t-dodge">Esquivar</button>
       <button id="t-attack" class="big">Lanzada</button>
     </div>
@@ -46,7 +46,7 @@
         <button id="btn-again">Otra vez (R)</button>
       </div>
     </div>
-    <div id="ver">CLAN · v0.5 · prototipo de pelea</div>
+    <div id="ver">CLAN · v0.6 · prototipo de pelea</div>
     <div id="stick"><div id="knob"></div></div>
     <script type="module" src="./main.js"></script>
   </body>

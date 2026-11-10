@@ -41,15 +41,17 @@ function humanBody(ctx, f, s, phase, speed, o) {
   const cx = W / 2, ground = H - 8 * k;
   const side = Math.abs(s), front = Math.abs(f), dir = s >= 0 ? 1 : -1;
   const swing = Math.sin(phase) * speed;
-  const crouch = pose === 'dodge' ? 1 : pose === 'brace' ? 0.4 : pose === 'thrust' ? 0.15 * t : 0;
+  const fat = o.fatigue || 0;
+  const crouch = pose === 'dodge' ? 1 : pose === 'brace' ? 0.4 : pose === 'thrust' ? 0.15 * t : o.air ? 0.55 : 0;
+  const breathBob = Math.sin(o.breath || 0) * (1.2 + 4 * fat) * k; // respiración: más rápida y profunda con el cansancio
   const limpBob = o.limp ? Math.max(0, Math.sin(phase)) * 9 * k * Math.min(1, speed) : 0;
   const legLen = (sitting ? 60 : 118) * k * (1 - crouch * 0.3);
   const hipY = ground - legLen + limpBob;
   const torsoH = 100 * k;
-  const shoulderY = hipY - torsoH + 12 * k;
+  const shoulderY = hipY - torsoH + 12 * k + breathBob + fat * 8 * k;
   const headY = shoulderY - 30 * k;
   const torsoW = lerp(25, 34, front) * k;
-  const lean = (pose === 'hurt' ? -0.22 : pose === 'dodge' ? 0.3 : pose === 'thrust' ? 0.16 * t : pose === 'brace' ? 0.12 : 0) * dir * Math.max(0.3, side);
+  const lean = (pose === 'hurt' ? -0.22 : pose === 'dodge' ? 0.3 : pose === 'thrust' ? 0.16 * t : pose === 'brace' ? 0.12 : 0.14 * fat) * dir * Math.max(0.3, side); // agotado se encorva
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
 
   // piernas
@@ -61,7 +63,7 @@ function humanBody(ctx, f, s, phase, speed, o) {
     else {
       const stance = crouch * (i === dir ? 26 : -18) * k * side;
       fx = hx + dir * side * swing * i * 34 * k * hurtLeg + stance;
-      fy = ground - front * Math.max(0, swing * i) * 16 * k * hurtLeg;
+      fy = ground - front * Math.max(0, swing * i) * 16 * k * hurtLeg - (o.air ? 34 * k : 0);
     }
     return { i, hx, fx, fy };
   });
@@ -155,15 +157,17 @@ function humanBody(ctx, f, s, phase, speed, o) {
     butt = { x: hand.x - dir * side * 4 * k, y: hand.y + 50 * k };
   }
   if (side <= 0.3 && !fighting) { const s2 = shoulderX(-1); drawArm(s2, s2 - 4 * k * front, shoulderY + 68 * k, false); }
-  ctx.strokeStyle = P.wood; ctx.lineWidth = 5 * k;
-  ctx.beginPath(); ctx.moveTo(butt.x, butt.y); ctx.lineTo(tip.x, tip.y); ctx.stroke();
-  const ta = Math.atan2(tip.y - butt.y, tip.x - butt.x);
-  ctx.fillStyle = P.stone;
-  ctx.beginPath();
-  ctx.moveTo(tip.x + Math.cos(ta + 1.57) * 6 * k, tip.y + Math.sin(ta + 1.57) * 6 * k);
-  ctx.lineTo(tip.x + Math.cos(ta) * 22 * k, tip.y + Math.sin(ta) * 22 * k);
-  ctx.lineTo(tip.x + Math.cos(ta - 1.57) * 6 * k, tip.y + Math.sin(ta - 1.57) * 6 * k);
-  ctx.fill();
+  if (!o.noSpear) { // al atacar o mantenerla firme, la lanza se dibuja en 3D
+    ctx.strokeStyle = P.wood; ctx.lineWidth = 5 * k;
+    ctx.beginPath(); ctx.moveTo(butt.x, butt.y); ctx.lineTo(tip.x, tip.y); ctx.stroke();
+    const ta = Math.atan2(tip.y - butt.y, tip.x - butt.x);
+    ctx.fillStyle = P.stone;
+    ctx.beginPath();
+    ctx.moveTo(tip.x + Math.cos(ta + 1.57) * 6 * k, tip.y + Math.sin(ta + 1.57) * 6 * k);
+    ctx.lineTo(tip.x + Math.cos(ta) * 22 * k, tip.y + Math.sin(ta) * 22 * k);
+    ctx.lineTo(tip.x + Math.cos(ta - 1.57) * 6 * k, tip.y + Math.sin(ta - 1.57) * 6 * k);
+    ctx.fill();
+  }
   drawArm(sx, hand.x, hand.y, false);
   ctx.fillStyle = o.armHurt ? '#9a4a3a' : P.skin; ctx.beginPath(); ctx.arc(hand.x, hand.y, 7 * k, 0, 7); ctx.fill();
   if (o.armHurt) { ctx.fillStyle = '#7a1a12'; ctx.beginPath(); ctx.ellipse(lerp(sx, hand.x, 0.4), lerp(shoulderY, hand.y, 0.4), 6 * k, 9 * k, 0, 0, 7); ctx.fill(); }

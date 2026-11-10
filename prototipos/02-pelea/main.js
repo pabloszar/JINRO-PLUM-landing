@@ -32,7 +32,7 @@ function heightAt(x, z) {
 
 // ---------- Render ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.getElementById('app').appendChild(renderer.domElement);
@@ -164,17 +164,39 @@ function bleed(x, y, z, n, spread = 1) {
   }
 }
 
+// Lanza en 3D: al atacar o mantenerla firme se ve salir hacia la fiera desde cualquier ángulo de cámara
+const spear = new THREE.Group();
+const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 2.3, 6), new THREE.MeshLambertMaterial({ color: 0x6b4a2a }));
+shaft.rotation.x = Math.PI / 2; shaft.position.z = 0.35;
+const tipM = new THREE.Mesh(new THREE.ConeGeometry(0.095, 0.36, 6), new THREE.MeshLambertMaterial({ color: 0x9aa1a8 }));
+tipM.rotation.x = Math.PI / 2; tipM.position.z = 1.6;
+spear.add(shaft, tipM); spear.visible = false; scene.add(spear);
+function updateSpear3D(pose, poseT, py) {
+  spear.visible = pose === 'thrust' || pose === 'brace';
+  if (!spear.visible) return;
+  const ext = pose === 'thrust' ? 0.15 + poseT * 1.05 : 0.35;
+  const yy = py + P.y + (pose === 'brace' ? 0.95 : 1.15);
+  spear.position.set(P.x + Math.sin(P.facing) * ext, yy, P.z + Math.cos(P.facing) * ext);
+  spear.rotation.set(pose === 'brace' ? 0.08 : -0.04, P.facing, 0);
+}
+// destello en el punto del golpe
+const impactTex = (() => { const c = canvas(64, 64); drawGlow(c.getContext('2d'), 'rgba(255,250,220,1)', 'rgba(255,180,80,0)'); return texFrom(c); })();
+const impact = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: impactTex, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending }));
+impact.visible = false; scene.add(impact); billboards.push(impact);
+let impactT = 0;
+function showImpact(x, y, z, big) { impact.position.set(x, y, z); impact.visible = true; impactT = big ? 0.32 : 0.22; impact.userData.big = big; }
+
 function reset() {
   Object.assign(P, {
     x: 0, z: 9, facing: Math.PI, phase: 0, speed: 0, sitting: false,
     hp: 100, energy: 100, energyDelay: 0, alive: true,
     leg: 0, arm: 0, bleed: 0, // segundos que le quedan a cada herida
-    action: null, iframes: 0, bracing: false, kbx: 0, kbz: 0, hurtT: 0, deadT: 0,
+    action: null, iframes: 0, bracing: false, braceT: 0, y: 0, vy: 0, breath: 0, kbx: 0, kbz: 0, hurtT: 0, deadT: 0,
     stats: { bites: 0, dodged: 0, hits: 0, blocked: 0, time: 0 },
   });
   Object.assign(W, {
     x: 34, z: -26, dir: 1, phase: 0, state: 'merodea', t: 0, home: new THREE.Vector2(34, -26), angle: 0, vx: 0, vz: 0,
-    hp: WOLF_HP, cooldown: 2.5, lungeDir: null, hasBit: false, flash: 0, tx: undefined, tz: undefined, fled: false,
+    hp: WOLF_HP, impaled: 0, flank: 1, cooldown: 2.5, lungeDir: null, hasBit: false, flash: 0, tx: undefined, tz: undefined, fled: false,
   });
   ended = null; document.getElementById('end').classList.add('hidden');
 }
@@ -262,11 +284,18 @@ addEventListener('keydown', (e) => {
   if (e.code === 'KeyH') document.getElementById('help').classList.toggle('hidden');
   if (e.code === 'KeyB') { showBars = !showBars; document.getElementById('bars').classList.toggle('hidden', !showBars); }
   if (e.code === 'KeyJ') press.add('attack');
-  if (e.code === 'Space') { e.preventDefault(); press.add('dodge'); }
+  if (e.code === 'Space') { e.preventDefault(); press.add('jump'); }
+  if (e.code === 'KeyC') press.add('dodge');
+  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') shiftDown = performance.now();
   if (e.code === 'KeyL') callWolf();
   if (e.code === 'KeyR' && ended) reset();
 });
-addEventListener('keyup', (e) => { keys[e.code] = false; });
+addEventListener('keyup', (e) => {
+  keys[e.code] = false;
+  // Shift: tocar = esquivar, mantener = correr
+  if ((e.code === 'ShiftLeft' || e.code === 'ShiftRight') && performance.now() - shiftDown < 220) press.add('dodge');
+});
+let shiftDown = 0;
 document.getElementById('btn-again').onclick = () => reset();
 document.getElementById('btn-time').onclick = () => { timeIdx = (timeIdx + 1) % 3; };
 document.getElementById('btn-wolf').onclick = () => callWolf();
@@ -335,6 +364,7 @@ el.addEventListener('wheel', (e) => { e.preventDefault(); user.dist = clamp(user
 let touchBrace = false;
 document.getElementById('t-attack').addEventListener('pointerdown', (e) => { e.preventDefault(); initAudio(); press.add('attack'); });
 document.getElementById('t-dodge').addEventListener('pointerdown', (e) => { e.preventDefault(); initAudio(); press.add('dodge'); });
+document.getElementById('t-jump').addEventListener('pointerdown', (e) => { e.preventDefault(); initAudio(); press.add('jump'); });
 const tb = document.getElementById('t-brace');
 tb.addEventListener('pointerdown', (e) => { e.preventDefault(); initAudio(); touchBrace = true; });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => tb.addEventListener(ev, () => { touchBrace = false; }));
@@ -345,7 +375,7 @@ function toast(t, dur = 2) { const n = document.getElementById('toast'); n.textC
 // ---------- Utilidades de combate ----------
 const angDiff = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 const faceTo = (x, z) => Math.atan2(x - P.x, z - P.z);
-const FIGHT_STATES = new Set(['acecha', 'acerca', 'agacha', 'salta', 'recupera', 'retrocede', 'aturdido']);
+const FIGHT_STATES = new Set(['acecha', 'acerca', 'agacha', 'flanquea', 'salta', 'recupera', 'retrocede', 'aturdido']);
 
 function hurtPlayer(dmg, fromX, fromZ) {
   P.hp -= dmg; P.hurtT = 0.35; P.stats.bites++;
@@ -364,10 +394,11 @@ function hurtPlayer(dmg, fromX, fromZ) {
   if (P.hp <= 0) die();
 }
 function hurtWolf(dmg, kind) {
-  W.hp -= dmg; W.flash = 0.18; P.stats.hits++;
+  W.hp -= dmg; W.flash = 0.22; P.stats.hits++;
+  showImpact(lerp(P.x, W.x, 0.75), heightAt(W.x, W.z) + 0.6, lerp(P.z, W.z, 0.75), kind === 'impale');
   const a = Math.atan2(W.x - P.x, W.z - P.z);
-  W.vx = Math.sin(a) * 7; W.vz = Math.cos(a) * 7;
-  bleed(W.x, heightAt(W.x, W.z) + 0.6, W.z, kind === 'impale' ? 18 : 10);
+  W.vx = Math.sin(a) * 9; W.vz = Math.cos(a) * 9;
+  bleed(W.x, heightAt(W.x, W.z) + 0.6, W.z, kind === 'impale' ? 24 : 16, 1.4);
   hitstop = kind === 'impale' ? 0.14 : 0.08; shake = kind === 'impale' ? 0.45 : 0.25;
   (kind === 'impale' ? sfx.impale : sfx.thud)(); sfx.yelp();
   if (W.hp <= 0) { W.state = 'muerto'; W.t = 0; finish('win'); return; }
@@ -430,19 +461,27 @@ function update(dtReal) {
   const mag = Math.min(1, Math.hypot(ix, iz));
   const mx = fwd.x * iz + right.x * ix, mz = fwd.z * iz + right.z * ix;
   const exhausted = P.energy < 5;
-  P.bracing = P.alive && !P.action && (keys.KeyK || mouseBrace || touchBrace) && P.energy > 0;
+  const wasBracing = P.bracing;
+  P.bracing = P.alive && !P.action && P.y <= 0 && (keys.KeyK || mouseBrace || touchBrace) && P.energy > (wasBracing ? 0 : 15); // agotado no puede volver a levantarla
+  if (P.bracing && !wasBracing) P.braceT = 0;
+  if (P.bracing) P.braceT += dt;
+  // cansancio gradual: 0 descansado, 1 agotado
+  const fatigue = clamp(1 - P.energy / 70, 0, 1);
 
   if (P.alive) {
     // acciones
-    if (press.has('attack') && !P.action && !P.bracing && P.energy >= 15) {
-      P.action = { type: 'thrust', t: 0, dur: P.arm ? 0.8 : 0.6, hit: false };
-      P.energy -= 18; P.energyDelay = 0.7; sfx.whoosh();
-      if (wd < 6 && W.state !== 'muerto') P.facing = faceTo(W.x, W.z); // apunta solo si la fiera está cerca
+    if (press.has('attack') && !P.action && !P.bracing && P.energy >= 8) {
+      P.action = { type: 'thrust', t: 0, dur: P.arm ? 0.7 : 0.52, hit: false };
+      P.energy -= 11; P.energyDelay = 0.45; sfx.whoosh();
+      if (wd < 7 && W.state !== 'muerto') P.facing = faceTo(W.x, W.z); // apunta solo si la fiera está cerca
     }
-    if (press.has('dodge') && !P.action && P.energy >= 18) {
+    if (press.has('dodge') && !P.action && P.energy >= 10 && P.y <= 0) {
       const d = mag > 0.1 ? Math.atan2(mx, mz) : P.facing + Math.PI; // sin dirección: salto hacia atrás
-      P.action = { type: 'dodge', t: 0, dur: 0.4, dir: d };
-      P.iframes = 0.3; P.energy -= 22; P.energyDelay = 0.7;
+      P.action = { type: 'dodge', t: 0, dur: 0.42, dir: d };
+      P.iframes = 0.32; P.energy -= 15; P.energyDelay = 0.45; sfx.whoosh();
+    }
+    if (press.has('jump') && P.y <= 0 && !P.action && P.energy >= 5) {
+      P.vy = P.leg ? 3.6 : 5.4; P.energy -= 6; P.energyDelay = 0.3;
     }
   }
   press.clear();
@@ -450,25 +489,27 @@ function update(dtReal) {
   let target = 0;
   if (P.alive && !P.action) {
     const run = (keys.ShiftLeft || keys.ShiftRight || Math.hypot(stick.x, stick.y) > 0.95) && !exhausted && !P.leg && !P.bracing;
-    const walk = P.leg ? 1.7 : 2.8;
-    target = mag > 0.1 ? (run ? 6.2 : walk) * mag : 0;
+    const walk = P.leg ? 2.2 : 3.6;
+    target = mag > 0.1 ? (run ? 7.2 : walk) * mag * (1 - 0.25 * fatigue) : 0;
     if (P.bracing) target = Math.min(target, 1.1);
     if (exhausted) target = Math.min(target, 1.6);
-    if (run && mag > 0.1) { P.energy -= dt * 13; P.energyDelay = 0.4; }
-    if (P.bracing) { P.energy -= dt * 7; P.energyDelay = 0.4; }
+    if (run && mag > 0.1) { P.energy -= dt * 7; P.energyDelay = 0.4; }
+    if (P.bracing) { P.energy -= dt * 4; P.energyDelay = 0.4; }
     if (mag > 0.1 && !(P.bracing && wd < 8)) P.facing += angDiff(Math.atan2(mx, mz), P.facing) * Math.min(1, dt * 12);
-    if (P.bracing && wd < 8) P.facing += angDiff(faceTo(W.x, W.z), P.facing) * Math.min(1, dt * 10); // la lanza firme apunta a la fiera
+    const watching = FIGHT_STATES.has(W.state) && wd < 12 && mag < 0.1; // quieto ante una fiera, la encaras
+    if ((P.bracing && wd < 8) || watching) { const d = angDiff(faceTo(W.x, W.z), P.facing); P.facing += clamp(d, -4 * dt, 4 * dt); } // gira hacia ella, pero no al instante
   }
-  P.speed = damp(P.speed, target, 10, dt);
+  P.speed = damp(P.speed, target, 14, dt);
   let vx = Math.sin(P.facing) * P.speed, vz = Math.cos(P.facing) * P.speed;
 
   if (P.action) {
     const A = P.action; A.t += dt;
     if (A.type === 'thrust') {
-      vx *= 0.3; vz *= 0.3;
-      if (!A.hit && A.t > 0.14 && A.t < 0.3 && W.state !== 'muerto') {
+      const lunge = A.t > 0.1 && A.t < 0.28 ? 4.5 : 0; // paso al frente al clavar
+      vx = vx * 0.3 + Math.sin(P.facing) * lunge; vz = vz * 0.3 + Math.cos(P.facing) * lunge;
+      if (!A.hit && A.t > 0.12 && A.t < 0.32 && W.state !== 'muerto') {
         const a = faceTo(W.x, W.z);
-        if (wd < 2.8 && Math.abs(angDiff(a, P.facing)) < 0.9) {
+        if (wd < 3.4 && Math.abs(angDiff(a, P.facing)) < 1.15) {
           A.hit = true;
           const counter = W.state === 'recupera'; // golpe justo después de su salto: el momento débil
           const dmg = 15 * (P.arm ? 0.6 : 1) * (counter ? 1.7 : 1);
@@ -477,7 +518,7 @@ function update(dtReal) {
         }
       }
     } else if (A.type === 'dodge') {
-      const sp = (P.leg ? 5 : 8.5) * (1 - A.t / A.dur);
+      const sp = (P.leg ? 7 : 12) * Math.pow(clamp(1 - A.t / A.dur, 0, 1), 1.5);
       vx = Math.sin(A.dir) * sp; vz = Math.cos(A.dir) * sp;
     }
     if (A.t >= A.dur) P.action = null;
@@ -487,11 +528,13 @@ function update(dtReal) {
   P.kbx *= Math.pow(0.002, dt); P.kbz *= Math.pow(0.002, dt);
   const pr = Math.hypot(P.x, P.z); if (pr > 200) { P.x *= 200 / pr; P.z *= 200 / pr; }
   const fd = Math.hypot(P.x - FIRE.x, P.z - FIRE.z); if (fd < 1.2) { P.x = FIRE.x + (P.x - FIRE.x) / fd * 1.2; P.z = FIRE.z + (P.z - FIRE.z) / fd * 1.2; }
-  if (P.energyDelay <= 0 && !P.action) P.energy = Math.min(100, P.energy + dt * (P.bleed ? 10 : 17));
+  if (P.energyDelay <= 0 && !P.action) P.energy = Math.min(100, P.energy + dt * (P.bleed ? 16 : 26));
   P.energy = Math.max(0, P.energy);
   P.phase += Math.hypot(vx, vz) * dt * 2.6;
+  if (P.y > 0 || P.vy > 0) { P.vy -= 16 * dt; P.y = Math.max(0, P.y + P.vy * dt); if (P.y === 0) { P.vy = 0; sfx.step(); } }
+  P.breath += dt * (2 + 7 * fatigue);
   const py = heightAt(P.x, P.z);
-  player.position.set(P.x, py - 0.05, P.z);
+  player.position.set(P.x, py - 0.05 + P.y, P.z);
   pShadow.position.set(P.x, py + 0.04, P.z);
 
   const facingV = new THREE.Vector3(Math.sin(P.facing), 0, Math.cos(P.facing));
@@ -499,10 +542,11 @@ function update(dtReal) {
   let pose = 'normal', poseT = 0;
   if (!P.alive) pose = 'dead';
   else if (P.hurtT > 0) pose = 'hurt';
-  else if (P.action?.type === 'thrust') { pose = 'thrust'; const t = P.action.t; poseT = t < 0.14 ? -0.2 * (t / 0.14) : t < 0.3 ? (t - 0.14) / 0.16 : 1 - (t - 0.3) / (P.action.dur - 0.3); }
+  else if (P.action?.type === 'thrust') { pose = 'thrust'; const t = P.action.t; poseT = t < 0.1 ? 0 : t < 0.22 ? (t - 0.1) / 0.12 : 1 - (t - 0.22) / (P.action.dur - 0.22); }
   else if (P.action?.type === 'dodge') pose = 'dodge';
   else if (P.bracing) pose = 'brace';
-  drawHuman(pCtx, f, s, P.phase, clamp(Math.hypot(vx, vz) / 3, 0, 1.3), { pose, poseT: clamp(poseT, 0, 1), limp: P.leg > 0, armHurt: P.arm > 0 && pose === 'normal' });
+  drawHuman(pCtx, f, s, P.phase, clamp(Math.hypot(vx, vz) / 3, 0, 1.3), { pose, poseT: clamp(poseT, 0, 1), limp: P.leg > 0, armHurt: P.arm > 0 && pose === 'normal', noSpear: pose === 'thrust' || pose === 'brace', breath: P.breath, fatigue: P.alive ? fatigue : 0, air: P.y > 0.05 });
+  updateSpear3D(pose, poseT, py);
   pTex.needsUpdate = true;
 
   // ---------------- Lobo ----------------
@@ -535,6 +579,7 @@ function update(dtReal) {
     if (bloodLife[i] <= 0) bloodPos[i * 3 + 1] = -999;
   }
   bloodGeo.attributes.position.needsUpdate = true;
+  if (impactT > 0) { impactT -= dtReal; const k = impact.userData.big ? 2.4 : 1.6; impact.scale.setScalar(k * (1.2 - impactT * 2)); impact.material.opacity = clamp(impactT * 5, 0, 1); if (impactT <= 0) impact.visible = false; }
 
   // ---------------- Cámara ----------------
   const tension = fighting && W.state !== 'muerto' && P.alive;
@@ -546,8 +591,8 @@ function update(dtReal) {
   lead.x = damp(lead.x, tension ? 0 : vx * 0.45, 1.5, dt); lead.z = damp(lead.z, tension ? 0 : vz * 0.45, 1.5, dt);
   const want = { yaw: user.yaw + lead.yaw, pitch: user.pitch + lead.pitch, dist: user.dist * (1 + lead.dist), lookY: 1.45 };
   if (tension) {
-    want.pitch = 10; want.dist = clamp(wd * 0.25 + 4.5, 6, 9); want.lookY = 1.4;
-    const toThreat = Math.atan2(-(W.x - P.x), -(W.z - P.z)) / DEG + 14;
+    want.pitch = 13; want.dist = clamp(wd * 0.25 + 4.5, 6, 9); want.lookY = 1.3;
+    const toThreat = Math.atan2(-(W.x - P.x), -(W.z - P.z)) / DEG + 32; // tres cuartos: se ve la lanza y la fiera
     user.yaw += angDiff(toThreat * DEG, user.yaw * DEG) / DEG * (1 - Math.exp(-1.6 * dt));
     want.yaw = user.yaw;
   }
@@ -574,14 +619,14 @@ function update(dtReal) {
   renderer.toneMappingExposure = exposure;
 
   // sonido
-  const growl = W.state === 'agacha' ? 1 : W.state === 'acerca' ? 0.45 : W.state === 'acecha' && wd < 14 ? 0.2 : 0;
+  const growl = W.state === 'agacha' ? 1 : W.state === 'flanquea' ? 0.7 : W.state === 'acerca' ? 0.45 : W.state === 'acecha' && wd < 14 ? 0.2 : 0;
   const fear = !P.alive ? 0 : clamp((tension ? 0.45 : 0) + (1 - P.hp / 100) * 0.6, 0, 1);
-  ambience(growl, fear, dt);
+  ambience(growl, fear, dt, P.alive ? fatigue : 0);
 
   // interfaz: sin barras; el daño se lee en la pantalla y en el cuerpo
   flashEl.style.opacity = Math.max(0, parseFloat(flashEl.style.opacity || 0) - dtReal * 2.2);
   hurtEl.style.opacity = clamp((1 - P.hp / 100) * 1.1 + (P.bleed ? 0.15 + Math.sin(elapsed * 6) * 0.08 : 0), 0, 0.95);
-  renderer.domElement.style.filter = exhausted || P.energy < 25 ? `saturate(${0.35 + P.energy / 40})` : '';
+  renderer.domElement.style.filter = fatigue > 0.05 ? `saturate(${1 - fatigue * 0.65})` : '';
   document.getElementById('mode').textContent = mode;
   document.getElementById('mode').className = tension ? 'tension' : '';
   document.getElementById('vignette').style.opacity = tension ? 0.7 : 0;
@@ -597,6 +642,9 @@ function updateWolf(dt, wd, night) {
   W.t += dt; W.flash -= dt; W.cooldown -= dt;
   const toP = Math.atan2(P.x - W.x, P.z - W.z);
   const playerByFire = Math.hypot(P.x - FIRE.x, P.z - FIRE.z) < 6;
+  // ¿la lanza firme le apunta? entonces no se lanza de frente
+  const guarded = P.bracing && Math.abs(angDiff(faceTo(W.x, W.z), P.facing)) < 0.6;
+  const wary = W.impaled > 0 && P.bracing;
   let tx = W.x, tz = W.z, sp = 0, pose = 'walk', faceP = false;
   const goto = (x, z, s) => { tx = x; tz = z; sp = s; };
 
@@ -621,6 +669,7 @@ function updateWolf(dt, wd, night) {
     case 'acerca': { // se acerca de frente, gruñendo
       faceP = true;
       goto(P.x - Math.sin(toP) * 4.2, P.z - Math.cos(toP) * 4.2, 3.2);
+      if ((guarded || wary) && wd < 7) { W.state = 'flanquea'; W.t = 0; W.flank = Math.random() < 0.5 ? 1 : -1; W.flanks = (W.flanks || 0) + 1; break; }
       if (wd < 5) { W.state = 'agacha'; W.t = 0; W.feint = Math.random() < 0.2; }
       if (playerByFire) { W.state = 'acecha'; W.t = 0; W.cooldown = 3; }
       if (W.t > 5) { W.state = 'acecha'; W.t = 0; W.cooldown = 1; }
@@ -631,6 +680,7 @@ function updateWolf(dt, wd, night) {
       const tell = night > 0.5 ? 0.6 : 0.75;
       if (W.t > tell) {
         if (W.feint) { W.state = 'retrocede'; W.t = 0; }
+        else if ((guarded || wary) && P.braceT >= W.t) { W.state = 'flanquea'; W.t = 0; W.flank = Math.random() < 0.5 ? 1 : -1; W.flanks = (W.flanks || 0) + 1; } // la lanza ya estaba ahí antes de agacharse: no salta
         else {
           W.state = 'salta'; W.t = 0; W.hasBit = false;
           // apunta a donde vas a estar, no a donde estás
@@ -640,6 +690,16 @@ function updateWolf(dt, wd, night) {
       }
       break;
     }
+    case 'flanquea': { // ve la lanza: te rodea buscando un costado, o espera a que te canses
+      faceP = true;
+      const a = Math.atan2(W.z - P.z, W.x - P.x) + W.flank * dt * 1.5;
+      goto(P.x + Math.cos(a) * 4.6, P.z + Math.sin(a) * 4.6, 5.5);
+      if (W.flanks >= 3) { W.state = 'retrocede'; W.t = 0; W.flanks = 0; break; } // no encuentra hueco: se retira un momento
+      if (!guarded && !wary && wd < 6 && W.t > 0.25) { W.state = 'agacha'; W.t = 0; W.feint = false; } // encontró un hueco
+      else if (W.t > 2.6) { W.state = 'retrocede'; W.t = 0; }
+      else if (W.t > 1.3 && Math.random() < dt * 0.8) W.flank *= -1; // cambia de lado para engañarte
+      break;
+    }
     case 'salta': {
       pose = 'lunge';
       const v = 11;
@@ -647,8 +707,8 @@ function updateWolf(dt, wd, night) {
       if (!W.hasBit && wd < 1.35 && P.alive) {
         W.hasBit = true;
         const facing = Math.abs(angDiff(faceTo(W.x, W.z), P.facing)) < 0.75;
-        if (P.iframes > 0) { P.stats.dodged++; toast('¡Esquivado!', 0.8); }
-        else if (P.bracing && facing) { P.stats.blocked++; P.energy -= 15; toast('¡Se clavó en tu lanza!', 1.2); hurtWolf(24, 'impale'); return; }
+        if (P.iframes > 0 || P.y > 0.55) { P.stats.dodged++; toast(P.y > 0.55 ? '¡Lo saltaste!' : '¡Esquivado!', 0.8); }
+        else if (P.bracing && facing) { P.stats.blocked++; P.energy -= 12; W.impaled = (W.impaled || 0) + 1; toast('¡Se clavó en tu lanza!', 1.2); hurtWolf(24, 'impale'); return; }
         else hurtPlayer(night > 0.5 ? 24 : 20, W.x, W.z);
       }
       if (W.t > 0.42) { W.state = 'recupera'; W.t = 0; }
@@ -706,7 +766,7 @@ function updateWolf(dt, wd, night) {
 }
 
 function frame() {
-  const dt = Math.min(0.05, clock.getDelta());
+  const dt = Math.min(0.1, clock.getDelta()); // con pocos cuadros por segundo el juego no se pone en cámara lenta
   update(dt);
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
