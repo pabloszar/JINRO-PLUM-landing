@@ -14,7 +14,7 @@ const { chromium } = require('playwright');
     if (s.end) { await p.waitForTimeout(3000); break; }
     if (fase === 'brace') {
       // primero levanta la lanza en el último momento, cuando el lobo ya se agachó, y lo remata
-      if ((s.st === 'agacha' && s.wt > 0.5) || s.st === 'salta') await p.keyboard.down('KeyK'); else await p.keyboard.up('KeyK');
+      if ((s.st === 'agacha' && s.wt > 0.45) || s.st === 'salta') await p.keyboard.down('KeyK'); else await p.keyboard.up('KeyK');
       if (s.st === 'aturdido' && s.wd < 3.4) { await p.keyboard.up('KeyK'); await p.keyboard.press('KeyJ'); fase = 'esquiva'; }
     } else {
       // después esquiva en el último momento y contraataca cuando queda expuesto

@@ -148,7 +148,7 @@ const wolf = new THREE.Mesh(billboardGeo(1.9, 0.95), wolfMat);
 scene.add(wolf); billboards.push(wolf);
 const wShadow = blob(0.9);
 const W = {};
-const WOLF_HP = 75;
+const WOLF_HP = 90;
 
 // sangre
 const BLOOD = 80, bloodGeo = new THREE.BufferGeometry(), bloodPos = new Float32Array(BLOOD * 3), bloodVel = new Float32Array(BLOOD * 3), bloodLife = new Float32Array(BLOOD);
@@ -191,7 +191,7 @@ function reset() {
     x: 0, z: 9, facing: Math.PI, phase: 0, speed: 0, sitting: false,
     hp: 100, energy: 100, energyDelay: 0, alive: true,
     leg: 0, arm: 0, bleed: 0, // segundos que le quedan a cada herida
-    action: null, iframes: 0, bracing: false, braceT: 0, y: 0, vy: 0, breath: 0, kbx: 0, kbz: 0, hurtT: 0, deadT: 0,
+    action: null, iframes: 0, bracing: false, braceT: 0, dodgeCd: 0, downT: 0, whiffT: 0, y: 0, vy: 0, breath: 0, kbx: 0, kbz: 0, hurtT: 0, deadT: 0,
     stats: { bites: 0, dodged: 0, hits: 0, blocked: 0, time: 0 },
   });
   Object.assign(W, {
@@ -387,6 +387,9 @@ function hurtPlayer(dmg, fromX, fromZ) {
   if (r < 0.45 && !P.leg) { P.leg = WOUND_TIME; msg = 'Te mordió la pierna'; }
   else if (r < 0.7 && !P.arm) { P.arm = WOUND_TIME; msg = 'Te mordió el brazo'; }
   if (Math.random() < 0.4) { P.bleed = 18; msg = msg ? `${msg} y sangras` : 'Sangras'; }
+  // cansado o mordido por la espalda: te tira al suelo
+  const fromBehind = Math.abs(angDiff(Math.atan2(fromX - P.x, fromZ - P.z), P.facing)) > 1.9;
+  if (P.energy < 30 || fromBehind) { P.downT = 1.0; P.action = null; msg = msg ? `Te derribó · ${msg.toLowerCase()}` : 'Te derribó'; }
   if (msg) toast(msg, 1.6);
   bleed(P.x, heightAt(P.x, P.z) + 1.1, P.z, 14);
   shake = 0.5; hitstop = 0.09; sfx.bite();
@@ -450,7 +453,7 @@ function update(dtReal) {
   if (fighting && P.alive && !ended) P.stats.time += dt;
 
   // ---------------- Jugador ----------------
-  P.iframes -= dt; P.hurtT -= dt; P.energyDelay -= dt;
+  P.iframes -= dt; P.hurtT -= dt; P.energyDelay -= dt; P.dodgeCd -= dt; P.downT -= dt; P.whiffT -= dt;
   P.leg = Math.max(0, P.leg - dt); P.arm = Math.max(0, P.arm - dt);
   if (P.bleed > 0) { P.bleed = Math.max(0, P.bleed - dt); P.hp -= dt * 0.7; if (Math.random() < dt * 4) bleed(P.x, heightAt(P.x, P.z) + 0.9, P.z, 1, 0.2); if (P.hp <= 0 && P.alive) die(); }
   const nearFire = Math.hypot(P.x - FIRE.x, P.z - FIRE.z);
@@ -468,17 +471,19 @@ function update(dtReal) {
   // cansancio gradual: 0 descansado, 1 agotado
   const fatigue = clamp(1 - P.energy / 70, 0, 1);
 
-  if (P.alive) {
+  const down = P.downT > 0; // derribado: no puedes hacer nada un momento
+  if (P.alive && !down) {
     // acciones
     if (press.has('attack') && !P.action && !P.bracing && P.energy >= 8) {
       P.action = { type: 'thrust', t: 0, dur: P.arm ? 0.7 : 0.52, hit: false };
-      P.energy -= 11; P.energyDelay = 0.45; sfx.whoosh();
+      P.energy -= 14; P.energyDelay = 0.5; sfx.whoosh();
       if (wd < 7 && W.state !== 'muerto') P.facing = faceTo(W.x, W.z); // apunta solo si la fiera está cerca
+      wolfSeesThrust(wd);
     }
-    if (press.has('dodge') && !P.action && P.energy >= 10 && P.y <= 0) {
+    if (press.has('dodge') && !P.action && P.energy >= 12 && P.y <= 0 && P.dodgeCd <= 0) {
       const d = mag > 0.1 ? Math.atan2(mx, mz) : P.facing + Math.PI; // sin dirección: salto hacia atrás
-      P.action = { type: 'dodge', t: 0, dur: 0.42, dir: d };
-      P.iframes = 0.32; P.energy -= 15; P.energyDelay = 0.45; sfx.whoosh();
+      P.action = { type: 'dodge', t: 0, dur: 0.38, dir: d };
+      P.iframes = 0.2; P.energy -= 20; P.energyDelay = 0.5; P.dodgeCd = 0.75; sfx.whoosh();
     }
     if (press.has('jump') && P.y <= 0 && !P.action && P.energy >= 5) {
       P.vy = P.leg ? 3.6 : 5.4; P.energy -= 6; P.energyDelay = 0.3;
@@ -487,10 +492,10 @@ function update(dtReal) {
   press.clear();
 
   let target = 0;
-  if (P.alive && !P.action) {
+  if (P.alive && !P.action && !down) {
     const run = (keys.ShiftLeft || keys.ShiftRight || Math.hypot(stick.x, stick.y) > 0.95) && !exhausted && !P.leg && !P.bracing;
-    const walk = P.leg ? 2.2 : 3.6;
-    target = mag > 0.1 ? (run ? 7.2 : walk) * mag * (1 - 0.25 * fatigue) : 0;
+    const walk = P.leg ? 2.0 : 3.2;
+    target = mag > 0.1 ? (run ? 6.6 : walk) * mag * (1 - 0.25 * fatigue) : 0;
     if (P.bracing) target = Math.min(target, 1.1);
     if (exhausted) target = Math.min(target, 1.6);
     if (run && mag > 0.1) { P.energy -= dt * 7; P.energyDelay = 0.4; }
@@ -509,21 +514,27 @@ function update(dtReal) {
       vx = vx * 0.3 + Math.sin(P.facing) * lunge; vz = vz * 0.3 + Math.cos(P.facing) * lunge;
       if (!A.hit && A.t > 0.12 && A.t < 0.32 && W.state !== 'muerto') {
         const a = faceTo(W.x, W.z);
-        if (wd < 3.4 && Math.abs(angDiff(a, P.facing)) < 1.15) {
+        if (wd < 3.0 && Math.abs(angDiff(a, P.facing)) < 1.1) {
           A.hit = true;
           const counter = W.state === 'recupera'; // golpe justo después de su salto: el momento débil
-          const dmg = 15 * (P.arm ? 0.6 : 1) * (counter ? 1.7 : 1);
+          const dmg = 15 * (P.arm ? 0.6 : 1) * (counter ? 1.5 : 1);
           if (counter) toast('¡Contraataque!', 1);
-          hurtWolf(dmg, 'hit');
+          if (W.state === 'salta') { W.hp -= dmg; W.flash = 0.22; P.stats.hits++; showImpact(lerp(P.x, W.x, 0.75), heightAt(W.x, W.z) + 0.6, lerp(P.z, W.z, 0.75), false); sfx.thud(); bleed(W.x, heightAt(W.x, W.z) + 0.6, W.z, 12, 1.4); if (W.hp <= 0) { W.state = 'muerto'; W.t = 0; finish('win'); } } // ya saltó: lo hieres pero sigue de largo y te muerde
+          else if (W.state === 'agacha') { // agachado está firme: el golpe lo hiere menos y salta sobre ti
+            W.hp -= dmg * 0.5; W.flash = 0.22; P.stats.hits++; sfx.thud(); showImpact(lerp(P.x, W.x, 0.75), heightAt(W.x, W.z) + 0.6, lerp(P.z, W.z, 0.75), false);
+            if (W.hp <= 0) { W.state = 'muerto'; W.t = 0; finish('win'); }
+            else { W.state = 'salta'; W.t = 0; W.hasBit = false; W.missed = false; W.lungeDir = Math.atan2(P.x - W.x, P.z - W.z); }
+          }
+          else hurtWolf(dmg, 'hit');
         }
       }
     } else if (A.type === 'dodge') {
-      const sp = (P.leg ? 7 : 12) * Math.pow(clamp(1 - A.t / A.dur, 0, 1), 1.5);
+      const sp = (P.leg ? 5.5 : 8.5) * Math.pow(clamp(1 - A.t / A.dur, 0, 1), 1.5);
       vx = Math.sin(A.dir) * sp; vz = Math.cos(A.dir) * sp;
     }
-    if (A.t >= A.dur) P.action = null;
+    if (A.t >= A.dur) { if (A.type === 'thrust' && !A.hit) P.whiffT = 0.6; P.action = null; } // fallar deja un hueco
   }
-  if (!P.alive) { vx = 0; vz = 0; P.deadT += dt; }
+  if (!P.alive || P.downT > 0) { vx = 0; vz = 0; if (!P.alive) P.deadT += dt; }
   P.x += (vx + P.kbx) * dt; P.z += (vz + P.kbz) * dt;
   P.kbx *= Math.pow(0.002, dt); P.kbz *= Math.pow(0.002, dt);
   const pr = Math.hypot(P.x, P.z); if (pr > 200) { P.x *= 200 / pr; P.z *= 200 / pr; }
@@ -541,6 +552,7 @@ function update(dtReal) {
   const f = -facingV.dot(fwd), s = facingV.dot(right);
   let pose = 'normal', poseT = 0;
   if (!P.alive) pose = 'dead';
+  else if (P.downT > 0) pose = 'dead'; // en el suelo
   else if (P.hurtT > 0) pose = 'hurt';
   else if (P.action?.type === 'thrust') { pose = 'thrust'; const t = P.action.t; poseT = t < 0.1 ? 0 : t < 0.22 ? (t - 0.1) / 0.12 : 1 - (t - 0.22) / (P.action.dur - 0.22); }
   else if (P.action?.type === 'dodge') pose = 'dodge';
@@ -638,6 +650,15 @@ function update(dtReal) {
   if (toastT > 0) { toastT -= dtReal; if (toastT <= 0) document.getElementById('toast').classList.remove('on'); }
 }
 
+// el lobo reacciona a tus estocadas: si no ve peligro real, salta hacia atrás
+function wolfSeesThrust(wd) {
+  if (['acecha', 'acerca', 'flanquea'].includes(W.state) && wd < 4.5 && Math.random() < 0.55) {
+    const a = Math.atan2(W.x - P.x, W.z - P.z);
+    W.vx = Math.sin(a) * 10; W.vz = Math.cos(a) * 10; W.state = 'retrocede'; W.t = 0.4;
+  }
+}
+function crouch(tell) { W.state = 'agacha'; W.t = 0; W.tell = tell; W.feint = false; }
+
 function updateWolf(dt, wd, night) {
   W.t += dt; W.flash -= dt; W.cooldown -= dt;
   const toP = Math.atan2(P.x - W.x, P.z - W.z);
@@ -645,6 +666,10 @@ function updateWolf(dt, wd, night) {
   // ¿la lanza firme le apunta? entonces no se lanza de frente
   const guarded = P.bracing && Math.abs(angDiff(faceTo(W.x, W.z), P.facing)) < 0.6;
   const wary = W.impaled > 0 && P.bracing;
+  const backTurned = Math.abs(angDiff(faceTo(W.x, W.z), P.facing)) > 1.8; // le das la espalda
+  const tellRange = () => (night > 0.5 ? 0.4 + Math.random() * 0.25 : 0.5 + Math.random() * 0.3);
+  // castiga errores: estocada al aire cerca de él = mordida casi sin aviso
+  if (P.whiffT > 0 && wd < 4.5 && ['acecha', 'acerca', 'flanquea', 'recupera', 'retrocede'].includes(W.state) && P.alive) { P.whiffT = 0; crouch(0.2); }
   let tx = W.x, tz = W.z, sp = 0, pose = 'walk', faceP = false;
   const goto = (x, z, s) => { tx = x; tz = z; sp = s; };
 
@@ -662,7 +687,7 @@ function updateWolf(dt, wd, night) {
       const cx = playerByFire ? FIRE.x : P.x, cz = playerByFire ? FIRE.z : P.z;
       if (W.t < 0.1) W.angle = Math.atan2(W.z - cz, W.x - cx);
       goto(cx + Math.cos(W.angle) * r, cz + Math.sin(W.angle) * r, 3.4);
-      if (W.cooldown <= 0 && !playerByFire && wd < 16) { W.state = 'acerca'; W.t = 0; }
+      if ((W.cooldown <= 0 || (backTurned && W.cooldown < 1)) && !playerByFire && wd < 16) { W.state = 'acerca'; W.t = 0; }
       if (wd > 34) { W.state = 'merodea'; W.t = 0; }
       break;
     }
@@ -670,19 +695,20 @@ function updateWolf(dt, wd, night) {
       faceP = true;
       goto(P.x - Math.sin(toP) * 4.2, P.z - Math.cos(toP) * 4.2, 3.2);
       if ((guarded || wary) && wd < 7) { W.state = 'flanquea'; W.t = 0; W.flank = Math.random() < 0.5 ? 1 : -1; W.flanks = (W.flanks || 0) + 1; break; }
-      if (wd < 5) { W.state = 'agacha'; W.t = 0; W.feint = Math.random() < 0.2; }
+      if (backTurned && wd < 6.5) { crouch(0.3); break; } // por la espalda: casi sin aviso
+      if (wd < 5) { crouch(tellRange()); W.feint = Math.random() < 0.15; }
       if (playerByFire) { W.state = 'acecha'; W.t = 0; W.cooldown = 3; }
       if (W.t > 5) { W.state = 'acecha'; W.t = 0; W.cooldown = 1; }
       break;
     }
     case 'agacha': { // la señal: se agacha, orejas atrás, lomo erizado
       pose = 'crouch'; faceP = true;
-      const tell = night > 0.5 ? 0.6 : 0.75;
+      const tell = W.tell ?? 0.7;
       if (W.t > tell) {
         if (W.feint) { W.state = 'retrocede'; W.t = 0; }
-        else if ((guarded || wary) && P.braceT >= W.t) { W.state = 'flanquea'; W.t = 0; W.flank = Math.random() < 0.5 ? 1 : -1; W.flanks = (W.flanks || 0) + 1; } // la lanza ya estaba ahí antes de agacharse: no salta
+        else if ((guarded || wary) && P.braceT >= 0.25) { W.state = 'flanquea'; W.t = 0; W.flank = Math.random() < 0.5 ? 1 : -1; W.flanks = (W.flanks || 0) + 1; } // vio la lanza con tiempo: no salta. Solo si la levantas en el último cuarto de segundo ya no puede frenar
         else {
-          W.state = 'salta'; W.t = 0; W.hasBit = false;
+          W.state = 'salta'; W.t = 0; W.hasBit = false; W.missed = false;
           // apunta a donde vas a estar, no a donde estás
           const lx = P.x + Math.sin(P.facing) * P.speed * 0.25, lz = P.z + Math.cos(P.facing) * P.speed * 0.25;
           W.lungeDir = Math.atan2(lx - W.x, lz - W.z);
@@ -695,7 +721,7 @@ function updateWolf(dt, wd, night) {
       const a = Math.atan2(W.z - P.z, W.x - P.x) + W.flank * dt * 1.5;
       goto(P.x + Math.cos(a) * 4.6, P.z + Math.sin(a) * 4.6, 5.5);
       if (W.flanks >= 3) { W.state = 'retrocede'; W.t = 0; W.flanks = 0; break; } // no encuentra hueco: se retira un momento
-      if (!guarded && !wary && wd < 6 && W.t > 0.25) { W.state = 'agacha'; W.t = 0; W.feint = false; } // encontró un hueco
+      if (!guarded && !wary && wd < 6 && W.t > 0.25) crouch(backTurned ? 0.3 : 0.4); // encontró un hueco: ataca rápido
       else if (W.t > 2.6) { W.state = 'retrocede'; W.t = 0; }
       else if (W.t > 1.3 && Math.random() < dt * 0.8) W.flank *= -1; // cambia de lado para engañarte
       break;
@@ -703,21 +729,25 @@ function updateWolf(dt, wd, night) {
     case 'salta': {
       pose = 'lunge';
       const v = 11;
+      // al inicio del salto corrige el rumbo hacia ti: esquivar antes de tiempo no sirve
+      if (W.t < 0.18) W.lungeDir += clamp(angDiff(toP, W.lungeDir), -5 * dt, 5 * dt);
       W.vx = Math.sin(W.lungeDir) * v; W.vz = Math.cos(W.lungeDir) * v;
       if (!W.hasBit && wd < 1.35 && P.alive) {
         W.hasBit = true;
-        const facing = Math.abs(angDiff(faceTo(W.x, W.z), P.facing)) < 0.75;
+        const facing = Math.abs(angDiff(faceTo(W.x, W.z), P.facing)) < 0.5;
         if (P.iframes > 0 || P.y > 0.55) { P.stats.dodged++; toast(P.y > 0.55 ? '¡Lo saltaste!' : '¡Esquivado!', 0.8); }
-        else if (P.bracing && facing) { P.stats.blocked++; P.energy -= 12; W.impaled = (W.impaled || 0) + 1; toast('¡Se clavó en tu lanza!', 1.2); hurtWolf(24, 'impale'); return; }
+        else if (P.bracing && facing) { P.stats.blocked++; P.energy -= 12; W.impaled = (W.impaled || 0) + 1; toast('¡Se clavó en tu lanza!', 1.2); hurtWolf(20, 'impale'); if (Math.random() < 0.35) { P.hp -= 8; P.hurtT = 0.3; flashEl.style.opacity = 0.4; sfx.bite(); toast('Se clavó, pero alcanzó a morderte', 1.4); if (P.hp <= 0) die(); } return; }
         else hurtPlayer(night > 0.5 ? 24 : 20, W.x, W.z);
       }
-      if (W.t > 0.42) { W.state = 'recupera'; W.t = 0; }
+      if (W.t > 0.42) { W.state = 'recupera'; W.t = 0; W.missed = !W.hasBit || P.stats.dodged > (W.dodgedSeen || 0); W.dodgedSeen = P.stats.dodged; W.combo = W.combo || 0; }
       break;
     }
     case 'recupera': { // tras el salto queda expuesto un momento
       faceP = true;
       W.vx *= Math.pow(0.001, dt); W.vz *= Math.pow(0.001, dt);
-      if (W.t > 0.9) { W.state = 'retrocede'; W.t = 0; }
+      // si falló, a veces vuelve a morder enseguida
+      if (W.missed && W.combo < 1 && W.t > 0.15 && wd < 4 && Math.random() < 0.45) { W.combo++; crouch(0.22); break; }
+      if (W.t > 0.6) { W.state = 'retrocede'; W.t = 0; W.combo = 0; }
       break;
     }
     case 'aturdido': {
@@ -727,7 +757,7 @@ function updateWolf(dt, wd, night) {
     }
     case 'retrocede': {
       goto(P.x - Math.sin(toP) * 9, P.z - Math.cos(toP) * 9, 4.5);
-      if (W.t > 1.3) { W.state = 'acecha'; W.t = 0; W.cooldown = (night > 0.5 ? 1 : 1.8) + Math.random() * 1.6; }
+      if (W.t > 1.3) { W.state = 'acecha'; W.t = 0; W.cooldown = (night > 0.5 ? 0.8 : 1.3) + Math.random() * 1.2; }
       break;
     }
     case 'huye': {
