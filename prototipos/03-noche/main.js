@@ -198,14 +198,16 @@ function reset() {
   clockN.t = 0; FIREST.fuel = 45; FIREST.embers = 0;
   for (const b of branches) { b.taken = false; b.m.visible = true; b.m.position.set(b.x, heightAt(b.x, b.z) - 0.05, b.z); }
   for (const b of bushes) { b.full = true; b.mat.map = bushOn; }
-  wolfRespawnT = 0;
+  Object.assign(WP, { active: false, next: NIGHT.dusk * 0.8, leave: 0, visits: 0 });
   Object.assign(W, {
-    x: 55, z: -45, dir: 1, phase: 0, state: 'merodea', t: 0, home: new THREE.Vector2(40, -35), angle: 0, vx: 0, vz: 0,
+    x: 999, z: 999, dir: 1, phase: 0, state: 'lejos', t: 0, home: new THREE.Vector2(40, -35), angle: 0, vx: 0, vz: 0,
     hp: WOLF_HP, impaled: 0, flank: 1, cooldown: 2.5, lungeDir: null, hasBit: false, flash: 0, tx: undefined, tz: undefined, fled: false,
   });
   ended = null; document.getElementById('end').classList.add('hidden');
 }
-let ended = null, wolfRespawnT = 0;
+let ended = null;
+// presencia de lobos: no siempre hay; cada cierto tiempo uno puede llegar, y si no encuentra presa, se va
+const WP = { active: false, next: 0, leave: 0, visits: 0 };
 
 // ---------- Mamuts a lo lejos ----------
 
@@ -260,7 +262,7 @@ const bushOn = (() => { const c = canvas(192, 160); drawBush(c.getContext('2d'),
 const bushGlow = (() => { const c = canvas(192, 160); drawBush(c.getContext('2d'), 'glow'); return texFrom(c); })();
 const bushOff = (() => { const c = canvas(192, 160); drawBush(c.getContext('2d'), false); return texFrom(c); })();
 const bushes = [0.4, 1.5, 2.6, 3.7, 4.9, 5.8].map((a, i) => {
-  const d = 18 + (i % 3) * 7, x = Math.cos(a) * d, z = Math.sin(a) * d;
+  const d = 26 + (i % 3) * 9, x = Math.cos(a) * d, z = Math.sin(a) * d;
   const mat = spriteMat(bushOn, { emissive: 0xff5a6a, emissiveMap: bushGlow, emissiveIntensity: 0 }); const m = new THREE.Mesh(billboardGeo(1.8, 1.5), mat);
   m.position.set(x, heightAt(x, z) - 0.1, z); scene.add(m); billboards.push(m);
   return { x, z, m, mat, full: true };
@@ -471,8 +473,8 @@ function die() {
 }
 function finish(kind) {
   if (kind === 'win' || kind === 'fled') { // en la noche, otro lobo vendrá
-    P.stats.lobos++; wolfRespawnT = kind === 'win' ? 45 : 30;
-    toast(kind === 'win' ? 'Mataste al lobo. La noche sigue.' : 'El lobo huyó. Volverá.', 2.2);
+    P.stats.lobos++; WP.active = false; WP.next = clockN.t + (kind === 'win' ? 50 : 35);
+    toast(kind === 'win' ? 'Mataste al lobo. La noche sigue.' : 'El lobo huyó herido.', 2.2);
     return;
   }
   if (ended) return;
@@ -508,15 +510,22 @@ function survival(dt, nearFire, fireR) {
   if (P.hunger <= 0) { P.hp -= dt * 0.6; if (P.hp <= 0) { P.cause = 'de hambre'; die(); } }
   // antorcha
   if (P.torch > 0) { P.torch -= dt; if (P.torch <= 0) toast('La antorcha se consumió', 1.5); }
-  // otro lobo llega tiempo después de espantar o matar al anterior
-  if (wolfRespawnT > 0) {
-    wolfRespawnT -= dt;
-    if (wolfRespawnT <= 0) {
+  // ¿llega un lobo? depende del fuego, de la sangre y de si andas en la oscuridad
+  if (!WP.active && clockN.t >= WP.next && clockN.t < NIGHT.dawnAt) {
+    const chance = 0.22 + (FIREST.fuel < 25 ? 0.3 : 0) + (P.bleed > 0 ? 0.25 : 0) + (!inLight ? 0.15 : 0) - WP.visits * 0.05;
+    if (Math.random() < chance) {
       const a = Math.random() * Math.PI * 2;
-      Object.assign(W, { x: P.x + Math.cos(a) * 40, z: P.z + Math.sin(a) * 40, state: 'merodea', t: 0, hp: WOLF_HP, impaled: 0, fled: false, vx: 0, vz: 0, home: new THREE.Vector2(P.x + Math.cos(a) * 30, P.z + Math.sin(a) * 30) });
-      sfx.howl(0.18); toast('Otro aullido, cerca', 2);
-    }
+      Object.assign(W, { x: P.x + Math.cos(a) * 45, z: P.z + Math.sin(a) * 45, state: 'merodea', t: 0, hp: WOLF_HP, impaled: 0, fled: false, vx: 0, vz: 0, home: new THREE.Vector2(P.x + Math.cos(a) * 35, P.z + Math.sin(a) * 35) });
+      WP.active = true; WP.leave = 60 + Math.random() * 70; WP.visits++; WP.eyes = 1 + Math.floor(Math.random() * 2);
+      sfx.howl(0.2); toast('Un aullido, cerca', 2);
+    } else WP.next = clockN.t + 20 + Math.random() * 15;
   }
+  // si te quedas en la luz y no encuentra presa, pierde interés y se va
+  if (WP.active && ['merodea', 'acecha'].includes(W.state)) {
+    WP.leave -= dt * (inLight ? 1 : 0.3) * (FIREST.fuel > 40 ? 1.5 : 1);
+    if (WP.leave <= 0) { W.state = 'se va'; W.t = 0; WP.active = false; WP.next = clockN.t + 30 + Math.random() * 30; }
+  }
+  if (clockN.t >= NIGHT.dawnAt && WP.active && ['merodea', 'acecha'].includes(W.state)) { W.state = 'se va'; W.t = 0; WP.active = false; } // al amanecer se retiran
 }
 
 function interact(nearFire, fireR) {
@@ -566,7 +575,7 @@ function nightVisuals(dt, py, fireR, night) {
     S.m.position.set(x, heightAt(x, z) + 0.55, z);
     S.blink -= dt; if (S.blink < -3 - Math.random() * 4) S.blink = 0.15;
     const close = Math.hypot(x - P.x, z - P.z) < 7 || (P.torch > 0 && Math.hypot(x - P.x, z - P.z) < 12);
-    S.m.visible = night > 0.6 && S.blink <= 0 && !close;
+    S.m.visible = WP.active && night > 0.6 && S.blink <= 0 && !close && shadows.indexOf(S) < WP.eyes;
   }
   // vaho al respirar con frío
   vaporT -= dt;
@@ -953,7 +962,12 @@ function updateWolf(dt, wd, night) {
       break;
     }
     case 'muerto': pose = 'dead'; W.vx *= Math.pow(0.001, dt); W.vz *= Math.pow(0.001, dt); break;
-    case 'lejos': W.x = 999; break;
+    case 'se va': { // se aleja y desaparece en la oscuridad
+      goto(W.x - Math.sin(toP) * 30, W.z - Math.cos(toP) * 30, 3);
+      if (W.t > 12 || wd > 60) W.state = 'lejos';
+      break;
+    }
+    case 'lejos': W.x = 999; W.z = 999; break;
   }
 
   if (sp > 0) {
@@ -992,4 +1006,4 @@ function frame() {
 reset();
 camTarget.set(P.x, heightAt(P.x, P.z) + 1.45, P.z);
 requestAnimationFrame(frame);
-window.__clan = { clockN, FIREST, branches, P, W, user, setTime: (i) => { timeIdx = i; timeT = i; }, callWolf, press, keys, reset };
+window.__clan = { WP, clockN, FIREST, branches, P, W, user, setTime: (i) => { timeIdx = i; timeT = i; }, callWolf, press, keys, reset };
