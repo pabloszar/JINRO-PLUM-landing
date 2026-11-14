@@ -9,7 +9,7 @@ Juego de supervivencia paleolítica en 2.5D (personajes 2D en un mundo 3D). Un h
 - **Prototipos:** `prototipos/<nn-nombre>/` (Vite + Three.js, sin otras dependencias). Cada uno parte del anterior.
   - `01-camara` (v0.2–v0.4): cámara y movimiento. Página: https://claude.ai/artifact/29e5sA3vmxDf3LxiPjzs5x
   - `02-pelea` (v0.5–v0.7, **validado**): pelea contra un lobo. Página: https://claude.ai/artifact/37JS7y2y61waM6yhbMTViX
-  - `03-noche` (v0.8–v0.10, **en prueba**): sobrevivir una noche. Página: https://claude.ai/artifact/54gDsJLDExr2BskTHLqc2Q
+  - `03-noche` (v0.8–v0.11, **en prueba**): sobrevivir una noche. Página: https://claude.ai/artifact/54gDsJLDExr2BskTHLqc2Q
   - `index.html` + `src/` en la raíz: prototipo 2D original (v0.1), descartado.
 - **Herramientas:** `herramientas/` — `vite.pagina.config.js` + `empaquetar.py` (un prototipo a un solo HTML publicable), `grabar-avance.cjs`, `grabar-pelea.cjs`, `grabar-noche.cjs` (graban video con Playwright).
 
@@ -21,12 +21,12 @@ Juego de supervivencia paleolítica en 2.5D (personajes 2D en un mundo 3D). Un h
 - Muerte permanente; la primera partida en modo duro; generaciones (renaces en un hijo o nieto); vida de unas 18 horas; el mundo cambia en cada generación.
 - Personaje siempre hombre. Mundo infinito generado. PC primero; pensar en multijugador sin construirlo.
 - Combate (validado en v0.7): el lobo avisa (se agacha), corrige el salto, castiga errores, lee la lanza firme (solo funciona levantándola en el último cuarto de segundo), puede derribarte; heridas que tardan en sanar; cansancio gradual.
-- Noche (v0.10): el fuego consume leña, frío, hambre, antorcha, lobos que pueden o no venir y pierden interés si te quedas en la luz.
-- Por probar más adelante: dormir para saltar la noche (con fuego grande y cama), encender el fuego donde quieras.
+- Noche (v0.11): el fuego consume leña, frío, hambre, antorcha, lobos que pueden o no venir (sin ritmo fijo) y pierden interés si te quedas en la luz; cama y dormir para acelerar la noche.
+- Por probar más adelante: encender el fuego donde quieras.
 
 ## Siguiente paso
 
-Esperando que el usuario juegue la v0.10 y responda si alejarse del fuego se siente como una decisión con riesgo. Después: **prototipo 4, un compañero** que te sigue y obedece cuatro gestos (sígueme, espera, ataca, huye).
+Esperando que el usuario juegue la v0.11 (dormir) y diga si la noche ya queda del lado de "da miedo" y no de "ya no quiero jugar". Después: **prototipo 4, un compañero** que te sigue y obedece cuatro gestos (sígueme, espera, ataca, huye).
 
 ## Forma de trabajar con este usuario
 
