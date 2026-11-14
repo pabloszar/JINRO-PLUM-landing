@@ -367,7 +367,7 @@ function callWolf() {
   toast('El lobo te encontró');
 }
 
-const stick = { x: 0, y: 0, id: null, ox: 0, oy: 0 };
+const stick = { x: 0, y: 0, id: null, ox: 0, oy: 0, run: false }; // run: el dedo está en el anillo exterior
 const looks = new Map();
 const knob = document.getElementById('knob'), base = document.getElementById('stick');
 const el = renderer.domElement;
@@ -384,7 +384,7 @@ el.addEventListener('pointerdown', (e) => {
   el.setPointerCapture(e.pointerId);
   if (e.pointerType === 'touch' && e.clientX < innerWidth * 0.45 && stick.id === null) {
     stick.id = e.pointerId; stick.ox = e.clientX; stick.oy = e.clientY;
-    base.style.left = `${e.clientX - 50}px`; base.style.top = `${e.clientY - 50}px`; base.classList.add('on');
+    base.style.left = `${e.clientX - 60}px`; base.style.top = `${e.clientY - 60}px`; base.classList.add('on');
   } else looks.set(e.pointerId, { x: e.clientX, y: e.clientY });
 });
 addEventListener('pointerup', (e) => { if (e.pointerType === 'mouse' && e.button === 2) mouseBrace = false; });
@@ -398,9 +398,14 @@ el.addEventListener('pointermove', (e) => {
     return;
   }
   if (e.pointerId === stick.id) {
-    const dx = e.clientX - stick.ox, dy = e.clientY - stick.oy, m = Math.min(1, Math.hypot(dx, dy) / 50) / (Math.hypot(dx, dy) || 1);
+    const dx = e.clientX - stick.ox, dy = e.clientY - stick.oy, m = Math.min(1, Math.hypot(dx, dy) / 60) / (Math.hypot(dx, dy) || 1);
     stick.x = dx * m; stick.y = dy * m;
-    knob.style.transform = `translate(${stick.x * 32}px, ${stick.y * 32}px)`;
+    // zona interior: caminar; anillo exterior: correr (con margen para no parpadear entre los dos)
+    const sm = Math.hypot(stick.x, stick.y), wasRun = stick.run;
+    stick.run = sm > (stick.run ? 0.66 : 0.8);
+    knob.classList.toggle('run', stick.run);
+    if (stick.run && !wasRun) { try { navigator.vibrate?.(18); } catch { /* sin vibración */ } }
+    knob.style.transform = `translate(${stick.x * 40}px, ${stick.y * 40}px)`;
     return;
   }
   const p = looks.get(e.pointerId); if (!p) return;
@@ -418,7 +423,7 @@ el.addEventListener('pointermove', (e) => {
   p.x = e.clientX; p.y = e.clientY;
 });
 const release = (e) => {
-  if (e.pointerId === stick.id) { stick.id = null; stick.x = stick.y = 0; knob.style.transform = ''; base.classList.remove('on'); }
+  if (e.pointerId === stick.id) { stick.id = null; stick.x = stick.y = 0; stick.run = false; knob.classList.remove('run'); knob.style.transform = ''; base.classList.remove('on'); }
   looks.delete(e.pointerId);
 };
 el.addEventListener('pointerup', release); el.addEventListener('pointercancel', release);
@@ -701,9 +706,10 @@ function update(dtReal) {
 
   let target = 0;
   if (P.alive && !P.action && !down) {
-    const run = (keys.ShiftLeft || keys.ShiftRight || Math.hypot(stick.x, stick.y) > 0.95) && !exhausted && !P.leg && !P.bracing;
+    const run = (keys.ShiftLeft || keys.ShiftRight || stick.run) && !exhausted && !P.leg && !P.bracing;
+    const stickWalk = stick.id !== null && !run ? Math.min(1, Math.hypot(stick.x, stick.y) / 0.66) / Math.max(mag, 0.01) : 1; // en la zona interior, cuanto más empujas más rápido caminas
     const walk = P.leg ? 2.0 : 3.2;
-    target = mag > 0.1 ? (run ? 6.6 : walk) * mag * (1 - 0.25 * fatigue) * (1 - 0.06 * P.carry) * (P.warmth < 25 ? 0.8 : 1) : 0;
+    target = mag > 0.1 ? (run ? 6.6 : walk * stickWalk) * mag * (1 - 0.25 * fatigue) * (1 - 0.06 * P.carry) * (P.warmth < 25 ? 0.8 : 1) : 0;
     if (P.bracing) target = Math.min(target, 1.1);
     if (exhausted) target = Math.min(target, 1.6);
     if (run && mag > 0.1) { P.energy -= dt * 7; P.energyDelay = 0.4; }
