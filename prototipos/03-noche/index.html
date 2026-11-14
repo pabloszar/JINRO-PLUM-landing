@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Clan · Prototipo de la noche</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="vignette"></div>
+    <div id="frost"></div>
+    <div id="hungry"></div>
+    <div id="hurt"></div>
+    <div id="flash"></div>
+    <div id="hud">
+      <div id="mode">Exploración</div>
+      <div id="time">Atardecer</div>
+    </div>
+    <div id="toast"></div>
+    <div id="prompt"></div>
+    <div id="bars" class="hidden">
+      <div>Vida <span><i id="bar-hp"></i></span></div>
+      <div>Energía <span><i id="bar-en"></i></span></div>
+      <div>Calor <span><i id="bar-warm"></i></span></div>
+      <div>Hambre <span><i id="bar-food"></i></span></div>
+      <div>Leña del fuego <span><i id="bar-fuel"></i></span></div>
+      <div>Lobo <span><i id="bar-wolf"></i></span></div>
+      <div id="bar-state"></div>
+    </div>
+    <div id="help">
+      <b>Prototipo 3 · Sobrevivir una noche</b>
+      <div>Llega al amanecer. El fuego se consume: sal a la oscuridad por ramas y aliméntalo.</div>
+      <div><kbd>WASD</kbd> caminar · <kbd>Shift</kbd> correr / tocar: esquivar · <kbd>Espacio</kbd> saltar · <kbd>Mouse</kbd> cámara</div>
+      <div><kbd>E</kbd> recoger rama · echar leña · comer bayas · <kbd>T</kbd> antorcha (junto al fuego)</div>
+      <div><kbd>Clic</kbd> lanzada · <kbd>Clic derecho</kbd> lanza firme · <kbd>B</kbd> barras de prueba · <kbd>H</kbd> ocultar</div>
+      <div class="hint">Lejos del fuego te enfrías: tiritas, echas vaho y la imagen se escarcha. Los lobos esperan en el borde de la luz.</div>
+    </div>
+    <div id="touch-actions">
+      <button id="t-use">Usar</button>
+      <button id="t-torch">Antorcha</button>
+      <button id="t-brace">Lanza firme</button>
+      <button id="t-jump">Saltar</button>
+      <button id="t-dodge">Esquivar</button>
+      <button id="t-attack" class="big">Lanzada</button>
+    </div>
+    <div id="end" class="hidden">
+      <div class="card">
+        <h2 id="end-title"></h2>
+        <p id="end-stats"></p>
+        <button id="btn-again">Otra noche (R)</button>
+      </div>
+    </div>
+    <div id="ver">CLAN · v0.8 · prototipo de la noche</div>
+    <div id="stick"><div id="knob"></div></div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
