@@ -27,10 +27,6 @@ button { font: inherit; font-size: 13px; font-weight: 600; color: #1a1006; backg
 #bars i { display: block; height: 100%; background: #f0b54a; }
 #bar-hp { background: #c8362a !important; }
 #bar-wolf { background: #9a9187 !important; }
-#touch-actions { display: none; position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(40px + env(safe-area-inset-bottom, 0px)); gap: 10px; align-items: flex-end; }
-#touch-actions button { width: 72px; height: 72px; border-radius: 50%; padding: 0; font-size: 12px; opacity: 0.85; }
-#touch-actions .big { width: 92px; height: 92px; font-size: 14px; }
-@media (pointer: coarse) { #touch-actions { display: flex; } }
 #end { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(5, 2, 0, 0.55); padding: 16px; }
 #end .card { background: rgba(20, 12, 6, 0.92); border-radius: 14px; padding: 22px 24px; max-width: 460px; text-align: center; display: grid; gap: 12px; }
 #end h2 { color: #f0b54a; font-size: 26px; }
@@ -39,6 +35,21 @@ button { font: inherit; font-size: 13px; font-weight: 600; color: #1a1006; backg
 #hungry { position: fixed; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, transparent 50%, rgba(40, 20, 0, 0.7) 100%); }
 #prompt { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: rgba(0, 0, 0, 0.55); padding: 7px 14px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis; }
 #prompt.on { opacity: 1; }
-#touch-actions { flex-wrap: wrap; max-width: 260px; justify-content: flex-end; }
-#touch-actions button { width: 64px; height: 64px; }
-@media (pointer: coarse) { #prompt { bottom: calc(190px + env(safe-area-inset-bottom, 0px)); } }
+
+/* controles táctiles: arco alrededor del botón de ataque, chicos y semitransparentes */
+#touch-actions { display: none; position: fixed; right: max(10px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); width: 176px; height: 176px; pointer-events: none; }
+#touch-actions button { position: absolute; width: 46px; height: 46px; border-radius: 50%; padding: 0; font-size: 10px; line-height: 1.1; opacity: 0.5; background: rgba(240, 181, 74, 0.8); pointer-events: auto; }
+#touch-actions button:active { opacity: 0.85; }
+#t-attack { right: 0; bottom: 0; width: 66px !important; height: 66px !important; font-size: 12px !important; opacity: 0.6 !important; }
+#t-dodge { right: 76px; bottom: 2px; }
+#t-jump { right: 64px; bottom: 56px; }
+#t-brace { right: 10px; bottom: 76px; }
+#t-use, #t-torch { display: none; background: rgba(255, 255, 255, 0.8) !important; }
+#t-use { right: 118px; bottom: 82px; }
+#t-torch { right: 64px; bottom: 120px; }
+#t-use.show, #t-torch.show { display: block; }
+@media (pointer: coarse) {
+  #touch-actions { display: block; }
+  #prompt { top: calc(54px + env(safe-area-inset-top, 0px)); bottom: auto; font-size: 12px; }
+}
+@media (pointer: coarse) { #ver { right: auto; left: max(16px, env(safe-area-inset-left, 0px)); } }

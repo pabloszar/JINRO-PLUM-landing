@@ -400,9 +400,10 @@ export function drawBranch(ctx, seed) {
 export function drawBush(ctx, berries) {
   const W = ctx.canvas.width, H = ctx.canvas.height;
   ctx.clearRect(0, 0, W, H);
+  const glowOnly = berries === 'glow'; // solo los frutos, para que brillen un poco de noche
   const blobs = [[0.3, 0.62, 0.24], [0.62, 0.58, 0.28], [0.46, 0.4, 0.24], [0.75, 0.72, 0.2], [0.2, 0.75, 0.18]];
-  for (const [x, y, r] of blobs) { ctx.fillStyle = '#2f4a2a'; ctx.beginPath(); ctx.arc(W * x, H * y, W * r, 0, 7); ctx.fill(); }
-  for (const [x, y, r] of blobs.slice(0, 3)) { ctx.fillStyle = '#41633a'; ctx.beginPath(); ctx.arc(W * x - W * r * 0.3, H * y - W * r * 0.3, W * r * 0.5, 0, 7); ctx.fill(); }
+  if (!glowOnly) for (const [x, y, r] of blobs) { ctx.fillStyle = '#2f4a2a'; ctx.beginPath(); ctx.arc(W * x, H * y, W * r, 0, 7); ctx.fill(); }
+  if (!glowOnly) for (const [x, y, r] of blobs.slice(0, 3)) { ctx.fillStyle = '#41633a'; ctx.beginPath(); ctx.arc(W * x - W * r * 0.3, H * y - W * r * 0.3, W * r * 0.5, 0, 7); ctx.fill(); }
   if (berries) {
     const pts = [[0.3, 0.55], [0.5, 0.35], [0.66, 0.5], [0.4, 0.68], [0.72, 0.66], [0.56, 0.6], [0.24, 0.72], [0.62, 0.3]];
     for (const [x, y] of pts) { ctx.fillStyle = '#b8233a'; ctx.beginPath(); ctx.arc(W * x, H * y, W * 0.035, 0, 7); ctx.fill(); ctx.fillStyle = '#ff8a9a'; ctx.beginPath(); ctx.arc(W * x - 2, H * y - 2, W * 0.01, 0, 7); ctx.fill(); }

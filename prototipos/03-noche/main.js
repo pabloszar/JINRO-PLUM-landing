@@ -257,10 +257,11 @@ for (let i = 0; i < 46; i++) {
 }
 // arbustos con bayas: lejos del fuego
 const bushOn = (() => { const c = canvas(192, 160); drawBush(c.getContext('2d'), true); return texFrom(c); })();
+const bushGlow = (() => { const c = canvas(192, 160); drawBush(c.getContext('2d'), 'glow'); return texFrom(c); })();
 const bushOff = (() => { const c = canvas(192, 160); drawBush(c.getContext('2d'), false); return texFrom(c); })();
 const bushes = [0.4, 1.5, 2.6, 3.7, 4.9, 5.8].map((a, i) => {
-  const d = 26 + (i % 3) * 9, x = Math.cos(a) * d, z = Math.sin(a) * d;
-  const mat = spriteMat(bushOn); const m = new THREE.Mesh(billboardGeo(1.8, 1.5), mat);
+  const d = 18 + (i % 3) * 7, x = Math.cos(a) * d, z = Math.sin(a) * d;
+  const mat = spriteMat(bushOn, { emissive: 0xff5a6a, emissiveMap: bushGlow, emissiveIntensity: 0 }); const m = new THREE.Mesh(billboardGeo(1.8, 1.5), mat);
   m.position.set(x, heightAt(x, z) - 0.1, z); scene.add(m); billboards.push(m);
   return { x, z, m, mat, full: true };
 });
@@ -319,6 +320,7 @@ const cam = { yaw: 0, pitch: 14, dist: 6, lookY: 1.45 };
 const LIMITS = { pitchMin: 3, pitchMax: 45, distMin: 2.5, distMax: 16 };
 const lead = { yaw: 0, dist: 0, pitch: 0, x: 0, z: 0 };
 const camTarget = new THREE.Vector3();
+let lastLook = -1e9; // última vez que el jugador movió la cámara a mano
 let shake = 0, hitstop = 0, mode = 'Exploración';
 
 // ---------- Entrada ----------
@@ -380,6 +382,7 @@ el.addEventListener('pointermove', (e) => {
   if (e.pointerType === 'mouse') {
     const mx = e.movementX || 0, my = e.movementY || 0;
     if (Math.abs(mx) > 200 || Math.abs(my) > 200) return;
+    if (Math.abs(mx) > 3) lastLook = performance.now();
     user.yaw -= mx * 0.12;
     user.pitch = clamp(user.pitch + my * 0.1, LIMITS.pitchMin, LIMITS.pitchMax);
     return;
@@ -399,6 +402,7 @@ el.addEventListener('pointermove', (e) => {
     if (before > 0) user.dist = clamp(user.dist * (before / after), LIMITS.distMin, LIMITS.distMax);
     return;
   }
+  if (Math.abs(e.clientX - p.x) > 2) lastLook = performance.now();
   user.yaw -= (e.clientX - p.x) * 0.15;
   user.pitch = clamp(user.pitch + (e.clientY - p.y) * 0.15, LIMITS.pitchMin, LIMITS.pitchMax);
   p.x = e.clientX; p.y = e.clientY;
@@ -527,6 +531,8 @@ function interact(nearFire, fireR) {
   else if (near?.kind === 'bush') prompt = 'E: comer bayas';
   if (atFire && !P.torch && FIREST.fuel >= 15) prompt += `${prompt ? ' · ' : ''}T: sacar una antorcha`;
   promptEl.textContent = prompt; promptEl.classList.toggle('on', !!prompt);
+  tUse.classList.toggle('show', prompt.includes('E:'));
+  tTorch.classList.toggle('show', prompt.includes('T:') || P.torch > 0);
 
   if (press.has('use')) {
     if (atFire && P.carry > 0 && (FIREST.fuel > 0 || FIREST.embers > 0)) {
@@ -576,12 +582,13 @@ function nightVisuals(dt, py, fireR, night) {
   crackleT -= dt;
   const nearFire = Math.hypot(P.x - FIRE.x, P.z - FIRE.z);
   if (FIREST.fuel > 0 && crackleT <= 0) { crackleT = 0.08 + Math.random() * 0.5 / (0.3 + FIREST.fuel / 100); sfx.crackle(0.12 * clamp(1 - nearFire / 20, 0, 1)); }
-  // ramas: siempre en su sitio
+  for (const b of bushes) b.mat.emissiveIntensity = b.full ? night * 0.9 : 0; // los frutos rojos se distinguen de noche
 }
 
 // ---------- Bucle ----------
 const clock = new THREE.Clock();
 const fwd = new THREE.Vector3(), right = new THREE.Vector3();
+const tUse = document.getElementById('t-use'), tTorch = document.getElementById('t-torch');
 const flashEl = document.getElementById('flash'), hurtEl = document.getElementById('hurt'), frostEl = document.getElementById('frost'), hungerEl = document.getElementById('hungry'), promptEl = document.getElementById('prompt');
 let exposure = 1, elapsed = 0;
 
@@ -755,7 +762,9 @@ function update(dtReal) {
   if (impactT > 0) { impactT -= dtReal; const k = impact.userData.big ? 2.4 : 1.6; impact.scale.setScalar(k * (1.2 - impactT * 2)); impact.material.opacity = clamp(impactT * 5, 0, 1); if (impactT <= 0) impact.visible = false; }
 
   // ---------------- Cámara ----------------
-  const tension = fighting && W.state !== 'muerto' && P.alive;
+  const engaged = ['acerca', 'agacha', 'salta', 'recupera', 'flanquea', 'aturdido', 'retrocede'].includes(W.state);
+  const insideLight = Math.hypot(P.x - FIRE.x, P.z - FIRE.z) < fireRadius() * 0.85;
+  const tension = fighting && W.state !== 'muerto' && P.alive && (engaged || !insideLight); // dentro de la luz, que ronde no es tensión
   mode = !P.alive ? 'Muerte' : tension ? 'Tensión' : 'Exploración';
   const vFwd = (vx * fwd.x + vz * fwd.z) / 6.2, vSide = (vx * right.x + vz * right.z) / 6.2;
   lead.dist = damp(lead.dist, clamp(-vFwd, 0, 1) * 0.22, 1.1, dt);
@@ -766,7 +775,7 @@ function update(dtReal) {
   if (tension) {
     want.pitch = 13; want.dist = clamp(wd * 0.25 + 4.5, 6, 9); want.lookY = 1.3;
     const toThreat = Math.atan2(-(W.x - P.x), -(W.z - P.z)) / DEG + 32; // tres cuartos: se ve la lanza y la fiera
-    user.yaw += angDiff(toThreat * DEG, user.yaw * DEG) / DEG * (1 - Math.exp(-1.6 * dt));
+    if (performance.now() - lastLook > 2500) user.yaw += angDiff(toThreat * DEG, user.yaw * DEG) / DEG * (1 - Math.exp(-1.6 * dt)); // si miras a otro lado, te deja
     want.yaw = user.yaw;
   }
   if (!P.alive) { want.pitch = 40; want.dist = 5 + P.deadT * 0.6; want.lookY = 0.4; user.yaw += dt * 6; want.yaw = user.yaw; }
