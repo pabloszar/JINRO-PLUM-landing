@@ -15,6 +15,7 @@ Historial de versiones para armar los videos de avances. Cada versión anota su 
 ## Decisiones que cambiaron el rumbo
 
 - **v0.1 → v0.2:** se descarta el 2D plano y la mecánica de ritmo; se elige 2.5D (personajes 2D en un mundo 3D) para dar profundidad y una cámara cinematográfica.
+- **Prototipo 2 cerrado (v0.7):** validado jugando. Se siente el golpe, el cansancio es gradual y el lobo no te deja indiferente: con práctica se domina, pero si te descuidas te mata, y las heridas tardan en sanar. Correcto para un enemigo estándar; la dificultad crecerá con manadas y depredadores mayores.
 - **v0.6 → v0.7:** quedó demasiado ágil y el lobo ya no era una amenaza; se recorta la esquiva y el lobo aprende a castigar errores.
 - **v0.5 → v0.6:** se sentía lento, sin salto, cansaba de golpe, no se entendía cómo pegar y el lobo se lanzaba contra la lanza sin pensar; se acelera, se agrega salto, cansancio gradual, lanza visible y un lobo que lee la defensa.
 - **v0.4 → v0.5:** con la cámara cerrada, se pasa al primer combate; se busca que pelear sea la última opción y que leer al animal sea la verdadera habilidad.
