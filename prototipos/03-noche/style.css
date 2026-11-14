@@ -53,3 +53,7 @@ button { font: inherit; font-size: 13px; font-weight: 600; color: #1a1006; backg
   #prompt { top: calc(54px + env(safe-area-inset-top, 0px)); bottom: auto; font-size: 12px; }
 }
 @media (pointer: coarse) { #ver { right: auto; left: max(16px, env(safe-area-inset-left, 0px)); } }
+#sleep { position: fixed; inset: 0; background: rgba(2, 3, 10, 0.86); display: flex; align-items: flex-end; justify-content: center; padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); opacity: 0; pointer-events: none; transition: opacity 1.2s; font-size: 14px; color: #c9d2ea; }
+#sleep.on { opacity: 1; pointer-events: auto; }
+#t-sleep { display: none; background: rgba(200, 210, 255, 0.85) !important; right: 118px; bottom: 132px; }
+#t-sleep.show { display: block; }

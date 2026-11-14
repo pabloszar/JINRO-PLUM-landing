@@ -19,6 +19,7 @@
     </div>
     <div id="toast"></div>
     <div id="prompt"></div>
+    <div id="sleep"><span>Durmiendo… pulsa una tecla o toca para despertar</span></div>
     <div id="bars" class="hidden">
       <div>Vida <span><i id="bar-hp"></i></span></div>
       <div>Energía <span><i id="bar-en"></i></span></div>
@@ -32,13 +33,14 @@
       <b>Prototipo 3 · Sobrevivir una noche</b>
       <div>Llega al amanecer. El fuego se consume: sal a la oscuridad por ramas y aliméntalo.</div>
       <div><kbd>WASD</kbd> caminar · <kbd>Shift</kbd> correr / tocar: esquivar · <kbd>Espacio</kbd> saltar · <kbd>Mouse</kbd> cámara</div>
-      <div><kbd>E</kbd> recoger rama · echar leña · comer bayas · <kbd>T</kbd> antorcha (junto al fuego)</div>
+      <div><kbd>E</kbd> recoger rama · echar leña · comer bayas · <kbd>T</kbd> antorcha · <kbd>Z</kbd> hacer cama (3 ramas) / dormir</div>
       <div><kbd>Clic</kbd> lanzada · <kbd>Clic derecho</kbd> lanza firme · <kbd>B</kbd> barras de prueba · <kbd>H</kbd> ocultar</div>
       <div class="hint">Lejos del fuego te enfrías: tiritas, echas vaho y la imagen se escarcha. Los lobos esperan en el borde de la luz.</div>
     </div>
     <div id="touch-actions">
       <button id="t-use">Usar</button>
       <button id="t-torch">Antorcha</button>
+      <button id="t-sleep">Cama / dormir</button>
       <button id="t-brace">Lanza firme</button>
       <button id="t-jump">Saltar</button>
       <button id="t-dodge">Esquivar</button>
@@ -51,7 +53,7 @@
         <button id="btn-again">Otra noche (R)</button>
       </div>
     </div>
-    <div id="ver">CLAN · v0.10 · prototipo de la noche</div>
+    <div id="ver">CLAN · v0.11 · prototipo de la noche</div>
     <div id="stick"><div id="knob"></div></div>
     <script type="module" src="./main.js"></script>
   </body>

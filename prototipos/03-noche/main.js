@@ -1,7 +1,7 @@
 // Prototipo 3 — Sobrevivir una noche.
 // Pregunta que responde: ¿da miedo alejarse del fuego?
 import * as THREE from 'three';
-import { canvas, drawHuman, drawWolf, drawMammoth, drawPine, drawBirch, drawRock, drawGrass, drawLogs, drawGlow, drawFlame, mulberry, drawBranch, drawBush } from './art.js';
+import { canvas, drawHuman, drawWolf, drawMammoth, drawPine, drawBirch, drawRock, drawGrass, drawLogs, drawGlow, drawFlame, mulberry, drawBranch, drawBush, drawBed } from './art.js';
 import { initAudio, sfx, ambience } from './audio.js';
 
 // ---------- Utilidades ----------
@@ -192,10 +192,11 @@ function reset() {
     hp: 100, energy: 100, energyDelay: 0, alive: true,
     leg: 0, arm: 0, bleed: 0, // segundos que le quedan a cada herida
     action: null, iframes: 0, bracing: false, braceT: 0, dodgeCd: 0, downT: 0, whiffT: 0, y: 0, vy: 0, breath: 0, kbx: 0, kbz: 0, hurtT: 0, deadT: 0,
-    stats: { bites: 0, dodged: 0, hits: 0, blocked: 0, time: 0, ramas: 0, fuera: 0, frio: 0, bayas: 0, lobos: 0 },
+    stats: { dormido: 0, bites: 0, dodged: 0, hits: 0, blocked: 0, time: 0, ramas: 0, fuera: 0, frio: 0, bayas: 0, lobos: 0 },
     warmth: 100, hunger: 70, carry: 0, torch: 0, cause: '',
   });
-  clockN.t = 0; FIREST.fuel = 45; FIREST.embers = 0;
+  clockN.t = 0; FIREST.fuel = 55; FIREST.embers = 0;
+  BED.built = false; bedMesh.visible = false; P.sleeping = false;
   for (const b of branches) { b.taken = false; b.m.visible = true; b.m.position.set(b.x, heightAt(b.x, b.z) - 0.05, b.z); }
   for (const b of bushes) { b.full = true; b.mat.map = bushOn; }
   Object.assign(WP, { active: false, next: NIGHT.dusk * 0.8, leave: 0, visits: 0 });
@@ -243,7 +244,7 @@ for (let i = 0; i < 3; i++) {
 // ---------- Supervivencia ----------
 const NIGHT = { dusk: 35, dawnAt: 290, end: 330 }; // segundos: atardecer, noche, amanecer
 const clockN = { t: 0 };
-const FIREST = { fuel: 45, embers: 0 };
+const FIREST = { fuel: 55, embers: 0 };
 const fireRadius = () => (FIREST.fuel > 0 ? 3 + FIREST.fuel / 100 * 9 : 0); // radio de luz y calor
 
 // ramas para la fogata: más lejos, más abundantes
@@ -284,6 +285,11 @@ vaporGeo.setAttribute('position', new THREE.BufferAttribute(vaporPos, 3));
 const vaporTex = (() => { const c = canvas(32, 32); drawGlow(c.getContext('2d'), 'rgba(230,240,255,0.6)', 'rgba(230,240,255,0)'); return texFrom(c); })();
 scene.add(new THREE.Points(vaporGeo, new THREE.PointsMaterial({ size: 0.35, map: vaporTex, transparent: true, depthWrite: false })));
 let vaporNext = 0, vaporT = 0, howlT = 8, crackleT = 0;
+// cama: se hace junto al fuego con 3 ramas; dormir hace correr la noche, pero el fuego también se consume
+const BED = { built: false, x: 0, z: 0 };
+const bedMesh = (() => { const c = canvas(256, 128); drawBed(c.getContext('2d')); const m = new THREE.Mesh(billboardGeo(2.2, 1.1), spriteMat(texFrom(c))); m.visible = false; scene.add(m); billboards.push(m); return m; })();
+const SLEEP_SPEED = 10;
+function wake(msg) { if (!P.sleeping) return; P.sleeping = false; toast(msg, 2.5); sleepEl.classList.remove('on'); }
 
 // ---------- Mamuts a lo lejos ----------
 const mamFrames = [0, 1].map((i) => { const c = canvas(512, 400); drawMammoth(c.getContext('2d'), i * Math.PI); return texFrom(c); });
@@ -336,6 +342,8 @@ addEventListener('keydown', (e) => {
   if (e.code === 'KeyY') clockN.t += 30; // prueba: adelantar la noche
   if (e.code === 'KeyE') press.add('use');
   if (e.code === 'KeyT') press.add('torch');
+  if (e.code === 'KeyZ') press.add('sleep');
+  else if (P.sleeping) wake('Te despertaste');
   if (e.code === 'KeyH') document.getElementById('help').classList.toggle('hidden');
   if (e.code === 'KeyB') { showBars = !showBars; document.getElementById('bars').classList.toggle('hidden', !showBars); }
   if (e.code === 'KeyJ') press.add('attack');
@@ -422,6 +430,8 @@ document.getElementById('t-dodge').addEventListener('pointerdown', (e) => { e.pr
 document.getElementById('t-jump').addEventListener('pointerdown', (e) => { e.preventDefault(); initAudio(); press.add('jump'); });
 document.getElementById('t-use').addEventListener('pointerdown', (e) => { e.preventDefault(); initAudio(); press.add('use'); });
 document.getElementById('t-torch').addEventListener('pointerdown', (e) => { e.preventDefault(); initAudio(); press.add('torch'); });
+document.getElementById('t-sleep').addEventListener('pointerdown', (e) => { e.preventDefault(); initAudio(); press.add('sleep'); });
+document.getElementById('sleep').addEventListener('pointerdown', () => wake('Te despertaste'));
 const tb = document.getElementById('t-brace');
 tb.addEventListener('pointerdown', (e) => { e.preventDefault(); initAudio(); touchBrace = true; });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => tb.addEventListener(ev, () => { touchBrace = false; }));
@@ -435,6 +445,7 @@ const faceTo = (x, z) => Math.atan2(x - P.x, z - P.z);
 const FIGHT_STATES = new Set(['acecha', 'acerca', 'agacha', 'flanquea', 'salta', 'recupera', 'retrocede', 'aturdido']);
 
 function hurtPlayer(dmg, fromX, fromZ) {
+  wake('¡Despierta!');
   P.hp -= dmg; P.hurtT = 0.35; P.stats.bites++;
   const a = Math.atan2(P.x - fromX, P.z - fromZ);
   P.kbx = Math.sin(a) * 6; P.kbz = Math.cos(a) * 6;
@@ -485,23 +496,26 @@ function finish(kind) {
     const heridas = [P.leg && 'pierna', P.arm && 'brazo', P.bleed && 'sangrado'].filter(Boolean).join(', ') || 'ninguna';
     document.getElementById('end-title').textContent = title;
     document.getElementById('end-stats').innerHTML =
-      `Ramas al fuego: ${s.ramas} · Tiempo fuera de la luz: ${Math.round(s.fuera)} s · Bayas: ${s.bayas}<br>Mordidas: ${s.bites} · Lobos espantados o muertos: ${s.lobos} · Frío máximo: ${Math.round(s.frio)}%<br>Heridas abiertas: ${heridas}`;
+      `Ramas al fuego: ${s.ramas} · Tiempo fuera de la luz: ${Math.round(s.fuera)} s · Bayas: ${s.bayas} · Dormiste: ${Math.round(s.dormido)} s de noche<br>Mordidas: ${s.bites} · Lobos espantados o muertos: ${s.lobos} · Frío máximo: ${Math.round(s.frio)}%<br>Heridas abiertas: ${heridas}`;
     document.getElementById('toast').classList.remove('on');
     document.getElementById('end').classList.remove('hidden');
   }, kind === 'dead' ? 1800 : 1400);
 }
 
+// tiempo de espera irregular: casi siempre corto, a veces muy largo (así no se puede medir)
+function expRand(min, mean, max) { return Math.min(max, min - Math.log(1 - Math.random()) * mean); }
+
 // ---------- Supervivencia: fuego, frío, hambre ----------
 function survival(dt, nearFire, fireR) {
   const night = clamp(clockN.t / NIGHT.dusk, 0, 1) * (clockN.t > NIGHT.dawnAt ? clamp(1 - (clockN.t - NIGHT.dawnAt) / 30, 0, 1) : 1);
   // la leña se consume; sin leña quedan brasas un rato
-  if (FIREST.fuel > 0) { FIREST.fuel = Math.max(0, FIREST.fuel - dt * 0.42); if (FIREST.fuel === 0) { FIREST.embers = 40; toast('El fuego se apagó. Quedan brasas: trae leña rápido.', 3); } }
+  if (FIREST.fuel > 0) { FIREST.fuel = Math.max(0, FIREST.fuel - dt * 0.36); if (FIREST.fuel === 0) { FIREST.embers = 40; toast('El fuego se apagó. Quedan brasas: trae leña rápido.', 3); } }
   else if (FIREST.embers > 0) { FIREST.embers -= dt; if (FIREST.embers <= 0) toast('Las brasas se apagaron. Estás a oscuras.', 3); }
   if (!P.alive) return;
   // calor: el fuego calienta; lejos, la noche enfría
   const inLight = nearFire < fireR;
   const warmFire = inLight ? 10 * (1 - nearFire / Math.max(fireR, 0.1)) + 2 : 0;
-  const coldRate = 0.3 + night * 1.25;
+  const coldRate = 0.3 + night * 1.05;
   P.warmth = clamp(P.warmth + dt * (warmFire - coldRate * (P.torch > 0 ? 0.45 : 1) * (inLight ? 0 : 1)), 0, 100);
   if (!inLight) { P.stats.fuera += dt; P.stats.frio = Math.max(P.stats.frio, 100 - P.warmth); }
   if (P.warmth < 12) { P.hp -= dt * 1.1; if (P.hp <= 0) { P.cause = 'de frío'; die(); } }
@@ -509,7 +523,7 @@ function survival(dt, nearFire, fireR) {
   P.hunger = Math.max(0, P.hunger - dt * 0.22);
   if (P.hunger <= 0) { P.hp -= dt * 0.6; if (P.hp <= 0) { P.cause = 'de hambre'; die(); } }
   // antorcha
-  if (P.torch > 0) { P.torch -= dt; if (P.torch <= 0) toast('La antorcha se consumió', 1.5); }
+  if (P.torch > 0) { P.torch = Math.max(0, P.torch - dt); if (P.torch === 0) toast('La antorcha se consumió', 1.5); } // no baja de cero: antes bloqueaba la lanza firme
   // ¿llega un lobo? depende del fuego, de la sangre y de si andas en la oscuridad
   if (!WP.active && clockN.t >= WP.next && clockN.t < NIGHT.dawnAt) {
     const chance = 0.22 + (FIREST.fuel < 25 ? 0.3 : 0) + (P.bleed > 0 ? 0.25 : 0) + (!inLight ? 0.15 : 0) - WP.visits * 0.05;
@@ -517,13 +531,18 @@ function survival(dt, nearFire, fireR) {
       const a = Math.random() * Math.PI * 2;
       Object.assign(W, { x: P.x + Math.cos(a) * 45, z: P.z + Math.sin(a) * 45, state: 'merodea', t: 0, hp: WOLF_HP, impaled: 0, fled: false, vx: 0, vz: 0, home: new THREE.Vector2(P.x + Math.cos(a) * 35, P.z + Math.sin(a) * 35) });
       WP.active = true; WP.leave = 60 + Math.random() * 70; WP.visits++; WP.eyes = 1 + Math.floor(Math.random() * 2);
-      sfx.howl(0.2); toast('Un aullido, cerca', 2);
-    } else WP.next = clockN.t + 20 + Math.random() * 15;
+      if (Math.random() < 0.65) { sfx.howl(0.2); toast('Un aullido, cerca', 2); } // a veces llega en silencio: solo verás sus ojos
+    } else WP.next = clockN.t + expRand(6, 24, 90);
+  }
+  if (P.sleeping) {
+    if (FIREST.fuel < 15) wake('El frío te despertó: el fuego se está apagando');
+    else if (WP.active && Math.hypot(P.x - W.x, P.z - W.z) < 28 && !['se va', 'lejos'].includes(W.state)) wake('Un ruido te despertó');
+    else if (P.hunger < 10) wake('El hambre te despertó');
   }
   // si te quedas en la luz y no encuentra presa, pierde interés y se va
   if (WP.active && ['merodea', 'acecha'].includes(W.state)) {
     WP.leave -= dt * (inLight ? 1 : 0.3) * (FIREST.fuel > 40 ? 1.5 : 1);
-    if (WP.leave <= 0) { W.state = 'se va'; W.t = 0; WP.active = false; WP.next = clockN.t + 30 + Math.random() * 30; }
+    if (WP.leave <= 0) { W.state = 'se va'; W.t = 0; WP.active = false; WP.next = clockN.t + expRand(15, 30, 100); }
   }
   if (clockN.t >= NIGHT.dawnAt && WP.active && ['merodea', 'acecha'].includes(W.state)) { W.state = 'se va'; W.t = 0; WP.active = false; } // al amanecer se retiran
 }
@@ -539,9 +558,23 @@ function interact(nearFire, fireR) {
   else if (near?.kind === 'branch') prompt = P.carry >= 4 ? 'Ya no puedes cargar más ramas' : 'E: recoger rama';
   else if (near?.kind === 'bush') prompt = 'E: comer bayas';
   if (atFire && !P.torch && FIREST.fuel >= 15) prompt += `${prompt ? ' · ' : ''}T: sacar una antorcha`;
+  // cama y sueño
+  const atBed = BED.built && Math.hypot(P.x - BED.x, P.z - BED.z) < 2.2;
+  const wolfNear = WP.active && Math.hypot(P.x - W.x, P.z - W.z) < 30 && !['se va', 'lejos', 'muerto', 'huye'].includes(W.state);
+  const canSleep = FIREST.fuel >= 50 && !wolfNear && clockN.t > NIGHT.dusk * 0.5 && clockN.t < NIGHT.dawnAt;
+  if (atFire && !BED.built && P.carry >= 3) prompt += `${prompt ? ' · ' : ''}Z: hacer una cama (3 ramas)`;
+  if (atBed && !P.sleeping) prompt += `${prompt ? ' · ' : ''}${canSleep ? 'Z: dormir' : wolfNear ? 'No puedes dormir con un lobo cerca' : FIREST.fuel < 50 ? 'Para dormir, aviva el fuego' : ''}`;
+  if (P.sleeping) prompt = '';
   promptEl.textContent = prompt; promptEl.classList.toggle('on', !!prompt);
   tUse.classList.toggle('show', prompt.includes('E:'));
   tTorch.classList.toggle('show', prompt.includes('T:') || P.torch > 0);
+  tSleep.classList.toggle('show', prompt.includes('Z:'));
+  if (press.has('sleep')) {
+    if (atFire && !BED.built && P.carry >= 3) {
+      const a = Math.atan2(P.x - FIRE.x, P.z - FIRE.z); BED.x = FIRE.x + Math.sin(a) * 2.4; BED.z = FIRE.z + Math.cos(a) * 2.4; BED.built = true; P.carry -= 3;
+      bedMesh.position.set(BED.x, heightAt(BED.x, BED.z) - 0.05, BED.z); bedMesh.visible = true; sfx.logs(); toast('Hiciste una cama junto al fuego', 2);
+    } else if (atBed && canSleep) { P.sleeping = true; P.x = BED.x; P.z = BED.z; P.carry = P.carry; sleepEl.classList.add('on'); }
+  }
 
   if (press.has('use')) {
     if (atFire && P.carry > 0 && (FIREST.fuel > 0 || FIREST.embers > 0)) {
@@ -587,7 +620,7 @@ function nightVisuals(dt, py, fireR, night) {
   vaporGeo.attributes.position.needsUpdate = true;
   // sonidos de la noche: aullidos lejanos y el fuego que crepita
   howlT -= dt;
-  if (night > 0.6 && howlT <= 0) { howlT = 18 + Math.random() * 25; sfx.howl(FIREST.fuel < 25 ? 0.16 : 0.07); }
+  if (night > 0.6 && howlT <= 0) { howlT = expRand(8, 28, 90); if (Math.random() < 0.6) sfx.howl(FIREST.fuel < 25 ? 0.14 : 0.04 + Math.random() * 0.05); } // aullidos lejanos sin ritmo fijo
   crackleT -= dt;
   const nearFire = Math.hypot(P.x - FIRE.x, P.z - FIRE.z);
   if (FIREST.fuel > 0 && crackleT <= 0) { crackleT = 0.08 + Math.random() * 0.5 / (0.3 + FIREST.fuel / 100); sfx.crackle(0.12 * clamp(1 - nearFire / 20, 0, 1)); }
@@ -597,13 +630,14 @@ function nightVisuals(dt, py, fireR, night) {
 // ---------- Bucle ----------
 const clock = new THREE.Clock();
 const fwd = new THREE.Vector3(), right = new THREE.Vector3();
-const tUse = document.getElementById('t-use'), tTorch = document.getElementById('t-torch');
+const tUse = document.getElementById('t-use'), tTorch = document.getElementById('t-torch'), tSleep = document.getElementById('t-sleep'), sleepEl = document.getElementById('sleep');
 const flashEl = document.getElementById('flash'), hurtEl = document.getElementById('hurt'), frostEl = document.getElementById('frost'), hungerEl = document.getElementById('hungry'), promptEl = document.getElementById('prompt');
 let exposure = 1, elapsed = 0;
 
 function update(dtReal) {
   let dt = dtReal;
   if (hitstop > 0) { hitstop -= dtReal; dt = dtReal * 0.06; } // golpe con peso: el tiempo casi se detiene
+  if (P.sleeping) { dt = dtReal * SLEEP_SPEED; P.stats.dormido += dt; } // dormido, la noche corre
   elapsed += dt;
   // la noche avanza sola: atardecer -> noche -> amanecer
   if (P.alive && !ended) clockN.t += dt;
@@ -643,7 +677,7 @@ function update(dtReal) {
   // cansancio gradual: 0 descansado, 1 agotado
   const fatigue = clamp(1 - P.energy / 70, 0, 1);
 
-  const down = P.downT > 0; // derribado: no puedes hacer nada un momento
+  const down = P.downT > 0 || P.sleeping; // derribado o dormido: no puedes hacer nada
   if (P.alive && !down) {
     // acciones
     if (press.has('attack') && !P.action && !P.bracing && P.energy >= 8) {
@@ -662,6 +696,7 @@ function update(dtReal) {
     }
   }
   if (P.alive && !down) interact(nearFire, fireR);
+  else { promptEl.classList.remove('on'); for (const t of [tUse, tTorch, tSleep]) t.classList.remove('show'); }
   press.clear();
 
   let target = 0;
@@ -707,7 +742,7 @@ function update(dtReal) {
     }
     if (A.t >= A.dur) { if (A.type === 'thrust' && !A.hit) P.whiffT = 0.6; P.action = null; } // fallar deja un hueco
   }
-  if (!P.alive || P.downT > 0) { vx = 0; vz = 0; if (!P.alive) P.deadT += dt; }
+  if (!P.alive || P.downT > 0 || P.sleeping) { vx = 0; vz = 0; if (!P.alive) P.deadT += dt; }
   P.x += (vx + P.kbx) * dt; P.z += (vz + P.kbz) * dt;
   P.kbx *= Math.pow(0.002, dt); P.kbz *= Math.pow(0.002, dt);
   const pr = Math.hypot(P.x, P.z); if (pr > 200) { P.x *= 200 / pr; P.z *= 200 / pr; }
@@ -725,7 +760,7 @@ function update(dtReal) {
   const f = -facingV.dot(fwd), s = facingV.dot(right);
   let pose = 'normal', poseT = 0;
   if (!P.alive) pose = 'dead';
-  else if (P.downT > 0) pose = 'dead'; // en el suelo
+  else if (P.downT > 0 || P.sleeping) pose = 'dead'; // en el suelo o acostado
   else if (P.hurtT > 0) pose = 'hurt';
   else if (P.action?.type === 'thrust') { pose = 'thrust'; const t = P.action.t; poseT = t < 0.1 ? 0 : t < 0.22 ? (t - 0.1) / 0.12 : 1 - (t - 0.22) / (P.action.dur - 0.22); }
   else if (P.action?.type === 'dodge') pose = 'dodge';
@@ -1006,4 +1041,4 @@ function frame() {
 reset();
 camTarget.set(P.x, heightAt(P.x, P.z) + 1.45, P.z);
 requestAnimationFrame(frame);
-window.__clan = { WP, clockN, FIREST, branches, P, W, user, setTime: (i) => { timeIdx = i; timeT = i; }, callWolf, press, keys, reset };
+window.__clan = { BED, WP, clockN, FIREST, branches, P, W, user, setTime: (i) => { timeIdx = i; timeT = i; }, callWolf, press, keys, reset };

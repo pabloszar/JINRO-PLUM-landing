@@ -409,3 +409,13 @@ export function drawBush(ctx, berries) {
     for (const [x, y] of pts) { ctx.fillStyle = '#b8233a'; ctx.beginPath(); ctx.arc(W * x, H * y, W * 0.035, 0, 7); ctx.fill(); ctx.fillStyle = '#ff8a9a'; ctx.beginPath(); ctx.arc(W * x - 2, H * y - 2, W * 0.01, 0, 7); ctx.fill(); }
   }
 }
+
+// ---------- Cama de ramas y hojas ----------
+export function drawBed(ctx) {
+  const W = ctx.canvas.width, H = ctx.canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 7; i++) { ctx.strokeStyle = i % 2 ? '#5b3d24' : '#6e4a2a'; ctx.lineWidth = H * 0.12; ctx.beginPath(); ctx.moveTo(W * 0.06, H * (0.5 + i * 0.06)); ctx.lineTo(W * 0.94, H * (0.62 + i * 0.03)); ctx.stroke(); }
+  for (let i = 0; i < 26; i++) { ctx.fillStyle = ['#4d6b34', '#6a7f3a', '#7a6a3a'][i % 3]; ctx.beginPath(); ctx.ellipse(W * (0.1 + (i * 37 % 80) / 100), H * (0.45 + (i * 13 % 40) / 100), W * 0.06, H * 0.08, (i % 5) * 0.6, 0, 7); ctx.fill(); }
+  ctx.fillStyle = '#8a6a48'; ctx.beginPath(); ctx.ellipse(W * 0.42, H * 0.55, W * 0.24, H * 0.16, -0.1, 0, 7); ctx.fill(); // piel encima
+}
